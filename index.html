@@ -1551,102 +1551,309 @@
             isAIResponding = true;
             addTypingIndicator();
             
-            // Simulate AI processing time
-            await new Promise(resolve => setTimeout(resolve, 1500 + Math.random() * 1000));
+            try {
+                // Try multiple free LLM APIs in order of preference
+                let response = await tryGroqAPI(userMessage) || 
+                              await tryHuggingFaceAPI(userMessage) || 
+                              await tryTogetherAPI(userMessage) ||
+                              getContextualResponse(userMessage.toLowerCase());
+                
+                removeTypingIndicator();
+                addMessage(response, 'ai');
+                
+            } catch (error) {
+                console.log('AI API Error:', error);
+                removeTypingIndicator();
+                
+                // Fallback to contextual response
+                let fallbackResponse = getContextualResponse(userMessage.toLowerCase());
+                addMessage(fallbackResponse, 'ai');
+            }
             
-            removeTypingIndicator();
-            
-            // Generate contextual response based on user message
-            let response = getContextualResponse(userMessage.toLowerCase());
-            
-            addMessage(response, 'ai');
             isAIResponding = false;
         }
 
+        // Try Groq API (free tier, very fast)
+        async function tryGroqAPI(userMessage) {
+            try {
+                const systemPrompt = `You are Uncle PD's personal AI fishing assistant for Northwest Indiana. You're knowledgeable about local lakes, fish species, techniques, weather conditions, and Indiana fishing regulations. Be helpful, friendly, and specific to the Northwest Indiana region. Keep responses conversational and practical for an experienced angler.`;
+                
+                const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer gsk_' // Would need real API key
+                    },
+                    body: JSON.stringify({
+                        model: 'llama3-8b-8192',
+                        messages: [
+                            { role: 'system', content: systemPrompt },
+                            { role: 'user', content: userMessage }
+                        ],
+                        max_tokens: 300,
+                        temperature: 0.7
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    return data.choices[0].message.content;
+                }
+            } catch (error) {
+                console.log('Groq API unavailable');
+                return null;
+            }
+        }
+
+        // Try Hugging Face Inference API (free)
+        async function tryHuggingFaceAPI(userMessage) {
+            try {
+                const prompt = `You are Uncle PD's fishing assistant for Northwest Indiana. User asks: "${userMessage}". Give helpful, local fishing advice:`;
+                
+                const response = await fetch('https://api-inference.huggingface.co/models/microsoft/DialoGPT-medium', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        inputs: prompt,
+                        parameters: {
+                            max_length: 200,
+                            temperature: 0.7
+                        }
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data[0] && data[0].generated_text) {
+                        return data[0].generated_text.replace(prompt, '').trim();
+                    }
+                }
+            } catch (error) {
+                console.log('Hugging Face API unavailable');
+                return null;
+            }
+        }
+
+        // Try Together AI (free tier)
+        async function tryTogetherAPI(userMessage) {
+            try {
+                const response = await fetch('https://api.together.xyz/inference', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' // Would need real API key
+                    },
+                    body: JSON.stringify({
+                        model: 'togethercomputer/llama-2-7b-chat',
+                        prompt: `You are Uncle PD's fishing assistant for Northwest Indiana. Answer this fishing question: ${userMessage}`,
+                        max_tokens: 200,
+                        temperature: 0.7
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    return data.output.choices[0].text;
+                }
+            } catch (error) {
+                console.log('Together AI unavailable');
+                return null;
+            }
+        }
+
+        // Enhanced contextual responses with more variety
         function getContextualResponse(message) {
             const responses = {
-                'spots': `Based on current conditions, here are the top fishing spots in NW Indiana today:
+                'spots': [
+                    `Based on current conditions, here are Uncle PD's top fishing spots in NW Indiana today:
 
-🎯 **Cedar Lake** - Excellent for bass around fallen timber on the north shore
-🎯 **Lake Michigan** - Steelhead are running near Michigan City harbor
-🎯 **Tippecanoe Lake** - Walleye active in 15-20ft depths on the east side
+🎯 **Cedar Lake** - Excellent for bass around fallen timber on the north shore. Water temp is perfect at 68°F.
+🎯 **Lake Michigan** - Steelhead are running near Michigan City harbor. Try early morning with spawn bags.
+🎯 **Tippecanoe Lake** - Walleye active in 15-20ft depths on the east side. Slow trolling with crawlers.
 
-The morning bite has been particularly good with partly cloudy skies and light winds!`,
+The morning bite has been particularly good with these partly cloudy skies!`,
 
-                'biting': `Here's what's actively feeding this week in NW Indiana:
+                    `Here's what's hot in Northwest Indiana right now:
 
-🐟 **Largemouth Bass** - Very active on spinnerbaits and Texas rigs
-🐟 **Steelhead** - Excellent runs in Lake Michigan tributaries
-🐟 **Walleye** - Best success trolling in deeper waters
-🐟 **Bluegill** - Spawning activity, try small jigs near shallow cover
+🔥 **Wolf Lake** - Pike are aggressive in the shallow north end. Try spinnerbaits.
+🔥 **Lake Wawasee** - Walleye are schooling on the main lake points. Jigs working well.
+🔥 **Bass Lake** - Topwater action is excellent at dawn and dusk.
 
-Water temps in the upper 60s are perfect for most species!`,
+Current water temps in the upper 60s are triggering feeding activity!`
+                ],
 
-                'regulations': `Current Indiana fishing regulations:
+                'biting': [
+                    `Uncle PD, here's what's actively feeding this week:
 
-📋 **License Required** - All anglers 18+ need valid Indiana fishing license
+🐟 **Largemouth Bass** - Very active on spinnerbaits and Texas rigs near cover
+🐟 **Steelhead** - Excellent runs in Lake Michigan tributaries  
+🐟 **Walleye** - Best success trolling in 15-25 foot depths
+🐟 **Bluegill** - Spawning activity in shallow bays, try small jigs
+
+Water temps around 68°F are perfect for most species!`,
+
+                    `What's biting for Uncle PD today:
+
+🎣 **Northern Pike** - Aggressive in Wolf Lake and Cedar Lake weed lines
+🎣 **Crappie** - Schools are tight in deeper timber at Lake Freeman
+🎣 **Bass** - Pre-spawn staging on main lake points
+🎣 **Catfish** - Active in deeper holes, especially evening hours
+
+The stable barometric pressure has fish feeding regularly!`
+                ],
+
+                'regulations': [
+                    `Current Indiana fishing regulations for Uncle PD:
+
+📋 **License Required** - All anglers 18+ need valid Indiana fishing license ($17 annual)
 📋 **Bass** - No size limit, 5 daily limit (most lakes)
 📋 **Walleye** - 14" minimum, 5 daily limit
 📋 **Steelhead** - No size limit, 5 daily limit
+📋 **Northern Pike** - No size limit, 5 daily limit
 📋 **Bluegill** - No size limit, 25 daily limit
 
 Always check lake-specific regulations as some waters have special rules!`,
 
-                'bait': `Best bait for current conditions (68°F water, light wind):
+                    `Uncle PD's regulation quick reference:
 
-🎣 **Topwater** - Buzzbaits and poppers for early morning bass
-🎣 **Spinnerbaits** - White/chartreuse for stained water
-🎣 **Jigs** - 1/4oz with trailers for bass in cover
-🎣 **Live Bait** - Nightcrawlers for walleye and catfish
-🎣 **Spoons** - Silver for Lake Michigan salmon and steelhead
+🎯 **Lake Michigan** - Great Lakes license or trout/salmon stamp required
+🎯 **Private Lakes** - Some require additional permits (check Cedar Lake rules)
+🎯 **Muskie** - 36" minimum where present, 1 daily limit
+🎯 **Striped Bass** - 14" minimum at Lake Shafer/Freeman
+🎯 **Season Dates** - Most species year-round, check muskie seasons
+
+Pro tip: Download the Indiana Fish & Wildlife app for latest updates!`
+                ],
+
+                'bait': [
+                    `Best bait for Uncle PD's current conditions (68°F water, light wind):
+
+🎣 **Topwater** - Buzzbaits and poppers for early morning bass action
+🎣 **Spinnerbaits** - White/chartreuse for stained water conditions
+🎣 **Jigs** - 1/4oz with crawfish trailers for bass in cover
+🎣 **Live Bait** - Nightcrawlers for walleye, minnows for crappie
+🎣 **Spoons** - Silver kastmasters for Lake Michigan salmon/steelhead
 
 The overcast conditions are perfect for reaction baits!`,
 
-                'weather': `Current fishing weather outlook:
+                    `Uncle PD's tackle recommendations for today:
+
+💪 **Structure Fishing** - Texas rigged creature baits in 8-12 feet
+💪 **Open Water** - Crankbaits in natural colors for clear water
+💪 **Weed Lines** - Spinnerbaits and chatterbaits
+💪 **Deep Water** - Drop shot with finesse worms
+💪 **Current Areas** - Jigs bounced along bottom
+
+Focus on transition zones where deep meets shallow!`
+                ],
+
+                'weather': [
+                    `Uncle PD's fishing weather outlook:
 
 🌤️ **Today**: 72°F, partly cloudy, SW winds 8mph - **Excellent** conditions
-🌡️ **Water Temp**: 68°F - Prime for bass, walleye, and pike
+🌡️ **Water Temp**: 68°F - Prime temperature for bass, walleye, and pike
 📊 **Barometric Pressure**: Stable - Fish should be actively feeding
 🌅 **Best Times**: Dawn (6:30-8:30 AM) and dusk (7:00-9:00 PM)
+⛅ **Tomorrow**: Similar conditions with light winds
 
-This is ideal fishing weather - get out there!`,
+This is ideal fishing weather - get out there Uncle PD!`,
 
-                'techniques': `Top techniques for NW Indiana right now:
+                    `Weather conditions for Uncle PD's fishing:
 
-🎯 **Bass Fishing**: Texas rig with creature baits around cover
-🎯 **Walleye**: Slow trolling with crawler harnesses
-🎯 **Steelhead**: Drift fishing with spawn bags
-🎯 **Panfish**: Small jigs under bobbers near spawning beds
+🎯 **Wind**: SW 8mph - Perfect for casting and boat control
+🎯 **Sky**: Partly cloudy - Great for topwater action
+🎯 **Pressure**: Rising slowly - Fish becoming more active
+🎯 **Humidity**: 65% - Comfortable conditions for all-day fishing
+🎯 **Moon Phase**: Waxing crescent - Good for evening bite
 
-Focus on structure transitions and current breaks for best results!`
+The next 3 days look excellent for fishing!`
+                ],
+
+                'techniques': [
+                    `Top techniques for Uncle PD in NW Indiana right now:
+
+🎯 **Bass Fishing**: Texas rig with creature baits around fallen timber
+🎯 **Walleye**: Slow trolling with crawler harnesses at 2.5 mph
+🎯 **Steelhead**: Drift fishing with spawn bags in current
+🎯 **Pike**: Spinnerbaits along weed edges and drop-offs
+🎯 **Panfish**: Small jigs under slip bobbers near spawning beds
+
+Focus on structure transitions and current breaks for best results!`,
+
+                    `Uncle PD's proven techniques for these conditions:
+
+⚡ **Reaction Baits** - Fast-moving lures in this wind
+⚡ **Finesse Fishing** - Slower presentations in clear water
+⚡ **Vertical Jigging** - For suspended fish in deeper lakes
+⚡ **Trolling Patterns** - Follow contour lines and points
+⚡ **Live Bait Rigs** - When fish are finicky or pressured
+
+Vary your retrieve speed until you find what triggers strikes!`
+                ]
             };
 
-            // Match user message to response categories
+            // Determine response category and pick random response
+            let category = 'general';
             if (message.includes('spot') || message.includes('where') || message.includes('location')) {
-                return responses.spots;
+                category = 'spots';
             } else if (message.includes('biting') || message.includes('active') || message.includes('fish')) {
-                return responses.biting;
+                category = 'biting';
             } else if (message.includes('regulation') || message.includes('rule') || message.includes('limit') || message.includes('legal')) {
-                return responses.regulations;
+                category = 'regulations';
             } else if (message.includes('bait') || message.includes('lure') || message.includes('what to use')) {
-                return responses.bait;
+                category = 'bait';
             } else if (message.includes('weather') || message.includes('condition')) {
-                return responses.weather;
+                category = 'weather';
             } else if (message.includes('technique') || message.includes('how') || message.includes('method')) {
-                return responses.techniques;
-            } else {
-                return `Great question! For Northwest Indiana fishing, I'd recommend checking current conditions and focusing on structure fishing. 
-
-The lakes here are producing well right now with water temps around 68°F. Cedar Lake and Lake Michigan are particularly hot spots.
-
-Would you like specific information about:
-• Best fishing spots today
-• What fish are actively biting
-• Current regulations and limits
-• Recommended baits and techniques
-
-Just ask and I'll give you detailed local insights!`;
+                category = 'techniques';
             }
+
+            if (responses[category] && Array.isArray(responses[category])) {
+                const randomIndex = Math.floor(Math.random() * responses[category].length);
+                return responses[category][randomIndex];
+            }
+
+            // General responses with more variety
+            const generalResponses = [
+                `Hey Uncle PD! Great question about Northwest Indiana fishing. 
+
+For the current conditions (68°F water, partly cloudy), I'd recommend focusing on structure fishing around Cedar Lake and Wolf Lake. The bass are active on spinnerbaits and the walleye are hitting in deeper water.
+
+What specific aspect would you like to know more about:
+• Best fishing spots for today's conditions
+• What fish are actively biting right now  
+• Current regulations and limits
+• Recommended baits and techniques for these conditions`,
+
+                `Uncle PD, with these perfect fishing conditions in NW Indiana, you've got lots of great options!
+
+The water temperature around 68°F has fish in an active feeding mood. Lake Michigan steelhead are running, Cedar Lake bass are hitting topwater, and the walleye are schooling in the deeper lakes.
+
+I can give you specific details about:
+• Hot spots that are producing today
+• What species are most active
+• Best baits for current weather
+• Local regulations you should know
+
+What would be most helpful for your next fishing trip?`,
+
+                `Perfect timing for fishing in Northwest Indiana, Uncle PD!
+
+Current conditions are excellent with stable weather and ideal water temps. The fish are cooperating across multiple species - from bass in the shallow lakes to walleye in the deeper waters.
+
+I'm here to help with whatever you need:
+• Detailed spot recommendations
+• Species activity reports  
+• Technique suggestions
+• Regulation updates
+
+Just ask me anything specific about your fishing plans!`
+            ];
+
+            const randomGeneral = Math.floor(Math.random() * generalResponses.length);
+            return generalResponses[randomGeneral];
         }
 
         function startVoiceInput() {
