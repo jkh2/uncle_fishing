@@ -1,0 +1,1788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NW Indiana Fishing Companion</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .app-container {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+
+        .logo {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: bold;
+            color: #2563eb;
+        }
+
+        .logo-text {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .uncle-pd-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 3px solid #2563eb;
+            object-fit: cover;
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+            background: #f8fafc;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .nav-btn {
+            background: none;
+            border: 2px solid #2563eb;
+            color: #2563eb;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .nav-btn.active, .nav-btn:hover {
+            background: #2563eb;
+            color: white;
+        }
+
+        .main-content {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .section {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.3s ease;
+        }
+
+        .section.active {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        /* Map Section */
+        .map-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+
+        .custom-marker {
+            background: #ef4444;
+            border: 3px solid white;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .custom-marker:hover {
+            transform: scale(1.2);
+        }
+
+        .map-loading {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, #4ade80, #22d3ee);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-align: center;
+        }
+
+        .map-controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .map-control-btn {
+            background: white;
+            border: none;
+            border-radius: 5px;
+            padding: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            cursor: pointer;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .custom-fish-marker {
+            width: 30px !important;
+            height: 30px !important;
+            background: #ef4444 !important;
+            border: 3px solid white !important;
+            border-radius: 50% !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3) !important;
+            cursor: pointer !important;
+        }
+
+        .user-location-marker {
+            width: 24px !important;
+            height: 24px !important;
+            background: #4ade80 !important;
+            border: 2px solid white !important;
+            border-radius: 50% !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
+        }
+
+        .custom-lake-marker {
+            width: 25px !important;
+            height: 25px !important;
+            background: #10b981 !important;
+            border: 2px solid white !important;
+            border-radius: 50% !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
+            cursor: pointer !important;
+        }
+
+        .custom-lake-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+        }
+
+        .custom-lake-card:hover {
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+
+        .custom-lake-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .custom-lake-name {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #1e293b;
+            margin: 0;
+        }
+
+        .lake-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .lake-action-btn {
+            background: none;
+            border: 1px solid #e2e8f0;
+            border-radius: 5px;
+            padding: 0.25rem 0.5rem;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+        }
+
+        .lake-action-btn:hover {
+            background: #f8fafc;
+        }
+
+        .lake-action-btn.view {
+            color: #2563eb;
+            border-color: #2563eb;
+        }
+
+        .lake-action-btn.delete {
+            color: #ef4444;
+            border-color: #ef4444;
+        }
+
+        .custom-popup .leaflet-popup-content-wrapper {
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+
+        .leaflet-popup-content {
+            margin: 8px 12px 8px 12px !important;
+        }
+
+        .lake-info {
+            position: fixed;
+            bottom: -300px;
+            left: 0;
+            right: 0;
+            background: white;
+            border-radius: 20px 20px 0 0;
+            padding: 1.5rem;
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.2);
+            transition: bottom 0.3s ease;
+            z-index: 1001;
+            max-height: 50vh;
+            overflow-y: auto;
+        }
+
+        .lake-info.show {
+            bottom: 0;
+        }
+
+        .lake-info-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #666;
+        }
+
+        /* Chat Section */
+        .chat-container {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            background: white;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 1rem;
+            border-radius: 18px;
+            word-wrap: break-word;
+        }
+
+        .message.user {
+            align-self: flex-end;
+            background: #2563eb;
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.ai {
+            align-self: flex-start;
+            background: #f1f5f9;
+            color: #334155;
+            border-bottom-left-radius: 4px;
+        }
+
+        .chat-input-container {
+            padding: 1rem;
+            background: white;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 20px;
+            outline: none;
+            font-size: 1rem;
+        }
+
+        .chat-input:focus {
+            border-color: #2563eb;
+        }
+
+        .send-btn, .voice-btn {
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: 50%;
+            background: #2563eb;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .send-btn:hover, .voice-btn:hover {
+            background: #1d4ed8;
+            transform: scale(1.05);
+        }
+
+        /* Conditions Section */
+        .conditions-container {
+            padding: 1rem;
+            background: white;
+            height: 100%;
+            overflow-y: auto;
+        }
+
+        .conditions-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .condition-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .condition-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .condition-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .condition-desc {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-top: 0.25rem;
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .quick-action {
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            padding: 0.75rem;
+            border-radius: 10px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .quick-action:hover {
+            background: #2563eb;
+            color: white;
+            border-color: #2563eb;
+        }
+
+        /* Loading Animation */
+        .loading {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #666;
+        }
+
+        .typing-indicator {
+            display: flex;
+            gap: 3px;
+        }
+
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            background: #666;
+            border-radius: 50%;
+            animation: typing 1.4s infinite ease-in-out both;
+        }
+
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes typing {
+            0%, 80%, 100% { transform: scale(0); opacity: 0.5; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Responsive Design */
+        @media (min-width: 768px) {
+            .conditions-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .quick-actions {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header class="header">
+            <div class="logo">
+                <div class="logo-text">
+                    <i class="fas fa-fish"></i>
+                    <span>Uncle PD's AI Fishing Partner</span>
+                </div>
+                <img src="unclepd.jpg" alt="Uncle PD" class="uncle-pd-avatar" onerror="this.style.display='none'">
+            </div>
+            <div class="nav-buttons">
+                <button class="nav-btn active" data-section="map">
+                    <i class="fas fa-map"></i>
+                </button>
+                <button class="nav-btn" data-section="chat">
+                    <i class="fas fa-comments"></i>
+                </button>
+                <button class="nav-btn" data-section="conditions">
+                    <i class="fas fa-cloud-sun"></i>
+                </button>
+                <button class="nav-btn" data-section="mylakes">
+                    <i class="fas fa-plus-circle"></i>
+                </button>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <!-- Map Section -->
+            <section class="section active" id="map">
+                <div class="map-container">
+                    <div id="map" class="map-loading">
+                        <h2 style="margin-bottom: 1rem;">Loading Northwest Indiana Lakes...</h2>
+                        <p style="margin-bottom: 2rem; opacity: 0.9;">Interactive map loading...</p>
+                        <div style="width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.3); border-top: 4px solid white; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                    </div>
+                    <div class="map-controls">
+                        <button class="map-control-btn" onclick="toggleMapType()" title="Toggle Satellite View">
+                            <i class="fas fa-satellite"></i>
+                        </button>
+                        <button class="map-control-btn" onclick="findMyLocation()" title="Find My Location">
+                            <i class="fas fa-crosshairs"></i>
+                        </button>
+                        <button class="map-control-btn" onclick="showAllLakes()" title="Show All Lakes">
+                            <i class="fas fa-fish"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Lake Info Panel -->
+                <div class="lake-info" id="lakeInfo">
+                    <div class="lake-info-header">
+                        <h3 id="lakeTitle">Lake Information</h3>
+                        <button class="close-btn" onclick="closeLakeInfo()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div id="lakeContent">
+                        <!-- Lake details will be populated here -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Chat Section -->
+            <section class="section" id="chat">
+                <div class="chat-container">
+                    <div class="quick-actions">
+                        <button class="quick-action" onclick="sendQuickMessage('What are the best fishing spots today?')">
+                            <i class="fas fa-map-marker-alt"></i><br>Best Spots
+                        </button>
+                        <button class="quick-action" onclick="sendQuickMessage('What fish are biting this week?')">
+                            <i class="fas fa-fish"></i><br>What's Biting
+                        </button>
+                        <button class="quick-action" onclick="sendQuickMessage('What are the current fishing regulations?')">
+                            <i class="fas fa-gavel"></i><br>Regulations
+                        </button>
+                        <button class="quick-action" onclick="sendQuickMessage('Best bait for current conditions?')">
+                            <i class="fas fa-seedling"></i><br>Best Bait
+                        </button>
+                    </div>
+                    
+                    <div class="chat-messages" id="chatMessages">
+                        <div class="message ai fade-in">
+                            <strong>🎣 Uncle PD's AI Fishing Assistant</strong><br><br>
+                            Welcome back, Uncle PD! I'm your personal fishing companion for Northwest Indiana. I can help you with:
+                            <br>• Local fishing conditions and forecasts
+                            <br>• Lake information and hotspots
+                            <br>• Fish species and techniques
+                            <br>• Regulations and licensing
+                            <br>• Your secret fishing spots
+                            <br><br>What would you like to know about fishing today?
+                        </div>
+                    </div>
+                    
+                    <div class="chat-input-container">
+                        <input type="text" class="chat-input" id="chatInput" placeholder="Ask about fishing conditions, spots, techniques..." maxlength="500">
+                        <button class="voice-btn" onclick="startVoiceInput()" title="Voice input">
+                            <i class="fas fa-microphone"></i>
+                        </button>
+                        <button class="send-btn" onclick="sendMessage()" title="Send message">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Conditions Section -->
+            <section class="section" id="conditions">
+                <div class="conditions-container">
+                    <h2 style="margin-bottom: 1rem; color: #1e293b;">Current Conditions</h2>
+                    
+                    <div class="conditions-grid">
+                        <div class="condition-card">
+                            <div class="condition-title">
+                                <i class="fas fa-thermometer-half"></i>
+                                Weather
+                            </div>
+                            <div class="condition-value" id="temperature">72°F</div>
+                            <div class="condition-desc">Partly cloudy, light breeze</div>
+                        </div>
+
+                        <div class="condition-card">
+                            <div class="condition-title">
+                                <i class="fas fa-water"></i>
+                                Water Temp
+                            </div>
+                            <div class="condition-value" id="waterTemp">68°F</div>
+                            <div class="condition-desc">Good for bass and pike</div>
+                        </div>
+
+                        <div class="condition-card">
+                            <div class="condition-title">
+                                <i class="fas fa-wind"></i>
+                                Wind
+                            </div>
+                            <div class="condition-value" id="windSpeed">8 mph</div>
+                            <div class="condition-desc">SW, ideal for casting</div>
+                        </div>
+
+                        <div class="condition-card">
+                            <div class="condition-title">
+                                <i class="fas fa-eye"></i>
+                                Conditions
+                            </div>
+                            <div class="condition-value" id="fishingConditions">Excellent</div>
+                            <div class="condition-desc">Prime fishing time!</div>
+                        </div>
+                    </div>
+
+                    <div style="background: white; padding: 1.5rem; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+                        <h3 style="margin-bottom: 1rem; color: #1e293b;">Weekly Forecast</h3>
+                        <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.5rem; text-align: center;">
+                            <div><strong>Mon</strong><br>🌤️<br>75°</div>
+                            <div><strong>Tue</strong><br>☀️<br>78°</div>
+                            <div><strong>Wed</strong><br>🌦️<br>71°</div>
+                            <div><strong>Thu</strong><br>☁️<br>69°</div>
+                            <div><strong>Fri</strong><br>🌤️<br>73°</div>
+                            <div><strong>Sat</strong><br>☀️<br>76°</div>
+                            <div><strong>Sun</strong><br>🌤️<br>74°</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- My Lakes Section -->
+            <section class="section" id="mylakes">
+                <div class="conditions-container">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h2 style="color: #1e293b; margin: 0;">Uncle PD's Secret Spots</h2>
+                        <button onclick="showAddLakeForm()" style="background: #2563eb; color: white; border: none; padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer;">
+                            <i class="fas fa-plus"></i> Add Lake
+                        </button>
+                    </div>
+                    
+                    <!-- Add Lake Form -->
+                    <div id="addLakeForm" style="display: none; background: white; padding: 1.5rem; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 1rem;">
+                        <h3 style="margin-top: 0; color: #1e293b;">Add Your Secret Fishing Spot</h3>
+                        <form onsubmit="addCustomLake(event)">
+                            <div style="margin-bottom: 1rem;">
+                                <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Lake Name:</label>
+                                <input type="text" id="lakeName" required style="width: 100%; padding: 0.5rem; border: 2px solid #e2e8f0; border-radius: 5px;">
+                            </div>
+                            
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                                <div>
+                                    <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Latitude:</label>
+                                    <input type="number" id="lakeLat" step="any" required style="width: 100%; padding: 0.5rem; border: 2px solid #e2e8f0; border-radius: 5px;">
+                                </div>
+                                <div>
+                                    <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Longitude:</label>
+                                    <input type="number" id="lakeLng" step="any" required style="width: 100%; padding: 0.5rem; border: 2px solid #e2e8f0; border-radius: 5px;">
+                                </div>
+                            </div>
+                            
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                                <div>
+                                    <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Size:</label>
+                                    <input type="text" id="lakeSize" placeholder="e.g., 150 acres" style="width: 100%; padding: 0.5rem; border: 2px solid #e2e8f0; border-radius: 5px;">
+                                </div>
+                                <div>
+                                    <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Max Depth:</label>
+                                    <input type="text" id="lakeDepth" placeholder="e.g., 25 ft" style="width: 100%; padding: 0.5rem; border: 2px solid #e2e8f0; border-radius: 5px;">
+                                </div>
+                            </div>
+                            
+                            <div style="margin-bottom: 1rem;">
+                                <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Fish Species (comma separated):</label>
+                                <input type="text" id="lakeFish" placeholder="e.g., Bass, Bluegill, Crappie" style="width: 100%; padding: 0.5rem; border: 2px solid #e2e8f0; border-radius: 5px;">
+                            </div>
+                            
+                            <div style="margin-bottom: 1rem;">
+                                <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Best Techniques:</label>
+                                <input type="text" id="lakeTechniques" placeholder="e.g., Topwater, Jigs, Live bait" style="width: 100%; padding: 0.5rem; border: 2px solid #e2e8f0; border-radius: 5px;">
+                            </div>
+                            
+                            <div style="margin-bottom: 1rem;">
+                                <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Access Points:</label>
+                                <textarea id="lakeAccess" placeholder="Describe how to access this spot..." style="width: 100%; padding: 0.5rem; border: 2px solid #e2e8f0; border-radius: 5px; min-height: 60px;"></textarea>
+                            </div>
+                            
+                            <div style="margin-bottom: 1rem;">
+                                <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Your Pro Tips:</label>
+                                <textarea id="lakeTips" placeholder="Share your secret knowledge about this spot..." style="width: 100%; padding: 0.5rem; border: 2px solid #e2e8f0; border-radius: 5px; min-height: 60px;"></textarea>
+                            </div>
+                            
+                            <div style="display: flex; gap: 1rem;">
+                                <button type="submit" style="background: #10b981; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; cursor: pointer; flex: 1;">
+                                    <i class="fas fa-save"></i> Save Lake
+                                </button>
+                                <button type="button" onclick="hideAddLakeForm()" style="background: #6b7280; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; cursor: pointer;">
+                                    Cancel
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <!-- Custom Lakes List -->
+                    <div id="customLakesList">
+                        <div id="noLakesMessage" style="text-align: center; padding: 2rem; color: #6b7280;">
+                            <i class="fas fa-fish" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                            <p>No secret spots added yet!</p>
+                            <p style="font-size: 0.9rem;">Click "Add Lake" to mark your favorite fishing holes.</p>
+                        </div>
+                    </div>
+                    
+                    <div style="background: #f0f9ff; padding: 1rem; border-radius: 10px; border-left: 4px solid #0ea5e9; margin-top: 1rem;">
+                        <h4 style="margin: 0 0 0.5rem 0; color: #1e293b;">💡 Pro Tips for Uncle PD:</h4>
+                        <ul style="margin: 0; padding-left: 1.5rem; font-size: 0.9rem; color: #475569;">
+                            <li>Use your GPS to get exact coordinates of hot spots</li>
+                            <li>Add detailed access notes so you can find the spot again</li>
+                            <li>Record what worked - time, weather, bait, techniques</li>
+                            <li>Your data stays private on your device only</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // Enhanced lake data with many more Northwest Indiana fishing destinations
+        const lakeData = {
+            'lake-michigan': {
+                name: 'Lake Michigan',
+                coords: { lat: 41.6564, lng: -87.0648 },
+                size: '22,300 sq mi',
+                depth: 'Max 923 ft',
+                fish: ['Salmon', 'Steelhead', 'Lake Trout', 'Perch', 'Coho'],
+                techniques: ['Trolling', 'Casting spoons', 'Bottom fishing', 'Pier fishing'],
+                access: 'Multiple public beaches and harbors - Michigan City, Gary, Hammond',
+                regulations: 'Indiana fishing license required. Daily limits: Salmon 5, Steelhead 5, Lake Trout 2',
+                tips: 'Best fishing at dawn and dusk. Try near river mouths and harbors.'
+            },
+            'cedar-lake': {
+                name: 'Cedar Lake',
+                coords: { lat: 41.3658, lng: -87.4412 },
+                size: '781 acres',
+                depth: 'Max 42 ft',
+                fish: ['Largemouth Bass', 'Bluegill', 'Crappie', 'Northern Pike', 'Catfish'],
+                techniques: ['Texas rig', 'Spinnerbaits', 'Jigs', 'Topwater'],
+                access: 'Public boat launch on south shore, multiple fishing piers',
+                regulations: 'No size limit on bass. 5 fish daily limit. Electric motors only.',
+                tips: 'Structure fishing around fallen trees works well. Try northeast corner.'
+            },
+            'wolf-lake': {
+                name: 'Wolf Lake',
+                coords: { lat: 41.6347, lng: -87.4953 },
+                size: '804 acres',
+                depth: 'Max 28 ft',
+                fish: ['Bass', 'Bluegill', 'Crappie', 'Northern Pike', 'Carp'],
+                techniques: ['Jigging', 'Live bait', 'Spinnerbaits'],
+                access: 'Wolf Lake Memorial Park boat launch',
+                regulations: 'Standard Indiana regulations. No special restrictions.',
+                tips: 'Great for shore fishing. Shallow north end good for panfish.'
+            },
+            'lake-wawasee': {
+                name: 'Lake Wawasee',
+                coords: { lat: 41.1897, lng: -85.8339 },
+                size: '3,410 acres',
+                depth: 'Max 85 ft',
+                fish: ['Walleye', 'Bass', 'Bluegill', 'Pike', 'Muskie'],
+                techniques: ['Trolling', 'Jigging', 'Live bait', 'Casting'],
+                access: 'Multiple public launches and marinas',
+                regulations: 'Walleye 14" minimum. Muskie 36" minimum, 1 daily limit.',
+                tips: 'Deep water trolling excellent for walleye. Try main lake points.'
+            },
+            'tippecanoe-lake': {
+                name: 'Tippecanoe Lake',
+                coords: { lat: 41.2089, lng: -85.8531 },
+                size: '956 acres',
+                depth: 'Max 87 ft',
+                fish: ['Walleye', 'Bass', 'Bluegill', 'Pike', 'Perch'],
+                techniques: ['Jigging', 'Trolling', 'Live bait', 'Drop shot'],
+                access: 'Public boat ramp on east side',
+                regulations: 'Walleye season April-March. Check current limits.',
+                tips: 'Deep water trolling for walleye is very productive.'
+            },
+            'george-lake': {
+                name: 'Lake George',
+                coords: { lat: 41.6442, lng: -87.1836 },
+                size: '253 acres', 
+                depth: 'Max 35 ft',
+                fish: ['Bass', 'Bluegill', 'Crappie', 'Catfish'],
+                techniques: ['Shore fishing', 'Small boats', 'Kayak fishing'],
+                access: 'Hobart lakefront park access',
+                regulations: 'City lake - special regulations may apply',
+                tips: 'Urban lake with good panfish action. Try early morning.'
+            },
+            'winona-lake': {
+                name: 'Winona Lake',
+                coords: { lat: 41.1953, lng: -85.8275 },
+                size: '562 acres',
+                depth: 'Max 35 ft',
+                fish: ['Bass', 'Bluegill', 'Catfish', 'Carp', 'Crappie'],
+                techniques: ['Topwater lures', 'Live bait', 'Drop shot', 'Crankbaits'],
+                access: 'Multiple access points around the lake',
+                regulations: 'Standard Indiana regulations apply',
+                tips: 'Early morning topwater action is excellent.'
+            },
+            'lake-maxinkuckee': {
+                name: 'Lake Maxinkuckee',
+                coords: { lat: 41.2831, lng: -86.2375 },
+                size: '1,854 acres',
+                depth: 'Max 88 ft',
+                fish: ['Bass', 'Walleye', 'Bluegill', 'Pike', 'Catfish'],
+                techniques: ['Deep trolling', 'Structure fishing', 'Live bait'],
+                access: 'Culver Academies area boat launch',
+                regulations: 'Standard regulations. Check for seasonal restrictions.',
+                tips: 'One of the deepest natural lakes in Indiana. Great walleye fishing.'
+            },
+            'bass-lake': {
+                name: 'Bass Lake',
+                coords: { lat: 41.2239, lng: -86.6053 },
+                size: '1,400 acres',
+                depth: 'Max 37 ft',
+                fish: ['Bass', 'Bluegill', 'Crappie', 'Pike', 'Catfish'],
+                techniques: ['Spinnerbaits', 'Jigs', 'Topwater', 'Live bait'],
+                access: 'Bass Lake State Beach, multiple boat ramps',
+                regulations: 'Standard Indiana limits. Electric motors only in some areas.',
+                tips: 'Excellent bass fishing around structure. Popular recreation lake.'
+            },
+            'bruce-lake': {
+                name: 'Bruce Lake',
+                coords: { lat: 41.1675, lng: -86.9531 },
+                size: '42 acres',
+                depth: 'Max 26 ft',
+                fish: ['Bass', 'Bluegill', 'Crappie', 'Catfish'],
+                techniques: ['Small jigs', 'Live bait', 'Light tackle'],
+                access: 'Small boat launch, shore fishing',
+                regulations: 'Electric motors only. Daily limits apply.',
+                tips: 'Small lake, great for kayak fishing. Good panfish action.'
+            },
+            'clear-lake': {
+                name: 'Clear Lake (Steuben)',
+                coords: { lat: 41.7250, lng: -85.0892 },
+                size: '800 acres',
+                depth: 'Max 95 ft',
+                fish: ['Walleye', 'Bass', 'Pike', 'Bluegill', 'Perch'],
+                techniques: ['Deep trolling', 'Jigging', 'Live bait'],
+                access: 'Public boat launch on south side',
+                regulations: 'Standard regulations. Walleye 14" minimum.',
+                tips: 'Very clear water - use natural colors. Deep lake with great structure.'
+            },
+            'crooked-lake': {
+                name: 'Crooked Lake',
+                coords: { lat: 41.7067, lng: -85.1281 },
+                size: '703 acres',
+                depth: 'Max 65 ft',
+                fish: ['Bass', 'Pike', 'Bluegill', 'Crappie', 'Perch'],
+                techniques: ['Structure fishing', 'Weed line fishing', 'Topwater'],
+                access: 'Public access on northeast shore',
+                regulations: 'Standard Indiana regulations',
+                tips: 'Lots of structure and weed beds. Great for pike fishing.'
+            },
+            'lake-holiday': {
+                name: 'Lake Holiday',
+                coords: { lat: 41.3892, lng: -87.2769 },
+                size: '237 acres',
+                depth: 'Max 28 ft',
+                fish: ['Bass', 'Bluegill', 'Crappie', 'Catfish'],
+                techniques: ['Shore fishing', 'Small boat fishing'],
+                access: 'Private community lake with some public access',
+                regulations: 'Check local regulations - may require permits',
+                tips: 'Quiet fishing spot. Good for family fishing.'
+            },
+            'lakes-of-four-seasons': {
+                name: 'Four Seasons Lakes',
+                coords: { lat: 41.3764, lng: -87.2125 },
+                size: '180 acres total',
+                depth: 'Max 25 ft',
+                fish: ['Bass', 'Bluegill', 'Catfish', 'Crappie'],
+                techniques: ['Light tackle', 'Small lures', 'Live bait'],
+                access: 'Community lakes - check access rules',
+                regulations: 'Private community - verify fishing permissions',
+                tips: 'Multiple connected lakes. Good panfish populations.'
+            },
+            'limestone-lake': {
+                name: 'Limestone Lake',
+                coords: { lat: 41.1456, lng: -86.0875 },
+                size: '85 acres',
+                depth: 'Max 45 ft',
+                fish: ['Bass', 'Bluegill', 'Catfish'],
+                techniques: ['Shore fishing', 'Small boat'],
+                access: 'Public access point',
+                regulations: 'Standard regulations apply',
+                tips: 'Small but productive lake. Good for beginners.'
+            },
+            'pretty-lake': {
+                name: 'Pretty Lake',
+                coords: { lat: 41.6125, lng: -85.6750 },
+                size: '97 acres',
+                depth: 'Max 38 ft',
+                fish: ['Bass', 'Bluegill', 'Pike', 'Crappie'],
+                techniques: ['Light tackle', 'Jigs', 'Live bait'],
+                access: 'Small public access',
+                regulations: 'Electric motors only',
+                tips: 'Beautiful clear lake. Great for peaceful fishing.'
+            },
+            'lake-gage': {
+                name: 'Lake Gage',
+                coords: { lat: 41.7108, lng: -85.0667 },
+                size: '416 acres',
+                depth: 'Max 48 ft',
+                fish: ['Bass', 'Walleye', 'Pike', 'Bluegill'],
+                techniques: ['Trolling', 'Casting', 'Live bait'],
+                access: 'Public boat launch',
+                regulations: 'Standard Indiana regulations',
+                tips: 'Good walleye lake. Try along drop-offs.'
+            },
+            'lake-pleasant': {
+                name: 'Lake Pleasant',
+                coords: { lat: 41.6892, lng: -85.1125 },
+                size: '192 acres',
+                depth: 'Max 35 ft',
+                fish: ['Bass', 'Bluegill', 'Crappie', 'Pike'],
+                techniques: ['Topwater', 'Jigs', 'Spinnerbaits'],
+                access: 'Public access on north side',
+                regulations: 'Standard regulations',
+                tips: 'Good bass lake with nice structure.'
+            },
+            'shriner-lake': {
+                name: 'Shriner Lake',
+                coords: { lat: 41.2456, lng: -86.9875 },
+                size: '118 acres',
+                depth: 'Max 22 ft',
+                fish: ['Bass', 'Bluegill', 'Crappie', 'Catfish'],
+                techniques: ['Shore fishing', 'Light tackle'],
+                access: 'Public fishing access',
+                regulations: 'Electric motors only',
+                tips: 'Great for family fishing. Good panfish numbers.'
+            },
+            'sylvan-lake': {
+                name: 'Sylvan Lake',
+                coords: { lat: 41.1678, lng: -85.8667 },
+                size: '669 acres',
+                depth: 'Max 68 ft',
+                fish: ['Walleye', 'Bass', 'Pike', 'Bluegill'],
+                techniques: ['Deep trolling', 'Jigging', 'Live bait'],
+                access: 'Multiple public access points',
+                regulations: 'Standard regulations. Walleye limits apply.',
+                tips: 'Excellent walleye fishing. Try deep water in summer.'
+            },
+            'lake-shafer': {
+                name: 'Lake Shafer',
+                coords: { lat: 40.7542, lng: -86.8958 },
+                size: '1,291 acres',
+                depth: 'Max 45 ft',
+                fish: ['Striped Bass', 'Walleye', 'Catfish', 'White Bass'],
+                techniques: ['Trolling', 'Live bait', 'Casting'],
+                access: 'Multiple boat ramps and marinas',
+                regulations: 'Striped bass 14" minimum. Check current limits.',
+                tips: 'Great striper fishing. Try main lake points and creek channels.'
+            },
+            'lake-freeman': {
+                name: 'Lake Freeman',
+                coords: { lat: 40.6833, lng: -87.0625 },
+                size: '1,547 acres',
+                depth: 'Max 35 ft',
+                fish: ['Bass', 'Crappie', 'Catfish', 'White Bass'],
+                techniques: ['Structure fishing', 'Live bait', 'Jigs'],
+                access: 'Multiple public boat ramps',
+                regulations: 'Standard Indiana regulations',
+                tips: 'Excellent crappie fishing. Focus on submerged timber.'
+            }
+        };
+
+        // Custom lakes storage and management
+        let customLakes = [];
+        let customMarkers = [];
+
+        // Load custom lakes from device storage
+        function loadCustomLakes() {
+            const stored = localStorage.getItem('unclePDCustomLakes');
+            if (stored) {
+                customLakes = JSON.parse(stored);
+                displayCustomLakes();
+                addCustomMarkersToMap();
+            }
+        }
+
+        // Save custom lakes to device storage
+        function saveCustomLakes() {
+            localStorage.setItem('unclePDCustomLakes', JSON.stringify(customLakes));
+        }
+
+        // Show add lake form
+        function showAddLakeForm() {
+            document.getElementById('addLakeForm').style.display = 'block';
+            // Pre-fill with user's current location if available
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    document.getElementById('lakeLat').value = position.coords.latitude.toFixed(6);
+                    document.getElementById('lakeLng').value = position.coords.longitude.toFixed(6);
+                });
+            }
+        }
+
+        // Hide add lake form
+        function hideAddLakeForm() {
+            document.getElementById('addLakeForm').style.display = 'none';
+            document.querySelector('#addLakeForm form').reset();
+        }
+
+        // Add custom lake
+        function addCustomLake(event) {
+            event.preventDefault();
+            
+            const lakeData = {
+                id: 'custom_' + Date.now(),
+                name: document.getElementById('lakeName').value,
+                coords: {
+                    lat: parseFloat(document.getElementById('lakeLat').value),
+                    lng: parseFloat(document.getElementById('lakeLng').value)
+                },
+                size: document.getElementById('lakeSize').value || 'Unknown',
+                depth: document.getElementById('lakeDepth').value || 'Unknown',
+                fish: document.getElementById('lakeFish').value.split(',').map(f => f.trim()).filter(f => f),
+                techniques: document.getElementById('lakeTechniques').value.split(',').map(t => t.trim()).filter(t => t),
+                access: document.getElementById('lakeAccess').value || 'Private access notes',
+                tips: document.getElementById('lakeTips').value || 'Personal fishing spot',
+                dateAdded: new Date().toLocaleDateString()
+            };
+            
+            customLakes.push(lakeData);
+            saveCustomLakes();
+            displayCustomLakes();
+            addCustomLakeMarker(lakeData);
+            hideAddLakeForm();
+            
+            // Show success message
+            alert(`🎣 "${lakeData.name}" added to your secret spots!`);
+        }
+
+        // Display custom lakes list
+        function displayCustomLakes() {
+            const container = document.getElementById('customLakesList');
+            const noLakesMsg = document.getElementById('noLakesMessage');
+            
+            if (customLakes.length === 0) {
+                noLakesMsg.style.display = 'block';
+                return;
+            }
+            
+            noLakesMsg.style.display = 'none';
+            
+            const lakesHTML = customLakes.map(lake => `
+                <div class="custom-lake-card">
+                    <div class="custom-lake-header">
+                        <h3 class="custom-lake-name">${lake.name}</h3>
+                        <div class="lake-actions">
+                            <button class="lake-action-btn view" onclick="viewCustomLakeOnMap('${lake.id}')">
+                                <i class="fas fa-map-marker-alt"></i> View
+                            </button>
+                            <button class="lake-action-btn delete" onclick="deleteCustomLake('${lake.id}')">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        </div>
+                    </div>
+                    <div style="font-size: 0.9rem; color: #64748b; margin-bottom: 0.5rem;">
+                        Added: ${lake.dateAdded} | Size: ${lake.size} | Depth: ${lake.depth}
+                    </div>
+                    ${lake.fish.length > 0 ? `
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>🐟 Fish:</strong> ${lake.fish.join(', ')}
+                    </div>
+                    ` : ''}
+                    ${lake.techniques.length > 0 ? `
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>🎣 Techniques:</strong> ${lake.techniques.join(', ')}
+                    </div>
+                    ` : ''}
+                    ${lake.tips ? `
+                    <div style="background: #f0f9ff; padding: 0.5rem; border-radius: 5px; border-left: 3px solid #0ea5e9; font-size: 0.9rem;">
+                        <strong>💡 Your Notes:</strong> ${lake.tips}
+                    </div>
+                    ` : ''}
+                </div>
+            `).join('');
+            
+            // Insert after the no lakes message
+            if (!document.getElementById('customLakesContainer')) {
+                const lakesContainer = document.createElement('div');
+                lakesContainer.id = 'customLakesContainer';
+                container.appendChild(lakesContainer);
+            }
+            document.getElementById('customLakesContainer').innerHTML = lakesHTML;
+        }
+
+        // Add custom lake marker to map
+        function addCustomLakeMarker(lake) {
+            if (!map) return;
+            
+            const customIcon = L.divIcon({
+                className: 'custom-lake-marker',
+                html: '<i class="fas fa-star" style="color: white; font-size: 12px;"></i>',
+                iconSize: [25, 25],
+                iconAnchor: [12.5, 12.5],
+                popupAnchor: [0, -12]
+            });
+
+            const marker = L.marker([lake.coords.lat, lake.coords.lng], {
+                icon: customIcon,
+                title: lake.name + ' (Uncle PD\'s Spot)'
+            }).addTo(map);
+
+            const popupContent = `
+                <div style="max-width: 300px; padding: 5px;">
+                    <h3 style="margin: 0 0 10px 0; color: #10b981; font-size: 16px;">
+                        <i class="fas fa-star"></i> ${lake.name}
+                    </h3>
+                    <div style="font-size: 11px; color: #6b7280; margin-bottom: 8px;">
+                        Uncle PD's Secret Spot - Added ${lake.dateAdded}
+                    </div>
+                    <div style="margin-bottom: 8px; font-size: 13px;">
+                        <strong>Size:</strong> ${lake.size}<br>
+                        <strong>Max Depth:</strong> ${lake.depth}
+                    </div>
+                    
+                    ${lake.fish.length > 0 ? `
+                    <div style="margin-bottom: 8px;">
+                        <strong>🐟 Fish Species:</strong><br>
+                        ${lake.fish.map(fish => `<span style="background: #d1fae5; padding: 2px 6px; border-radius: 8px; margin: 1px; display: inline-block; font-size: 11px;">${fish}</span>`).join('')}
+                    </div>
+                    ` : ''}
+                    
+                    ${lake.techniques.length > 0 ? `
+                    <div style="margin-bottom: 8px; font-size: 12px;">
+                        <strong>🎣 Best Techniques:</strong><br>
+                        ${lake.techniques.join(', ')}
+                    </div>
+                    ` : ''}
+                    
+                    <div style="margin-bottom: 8px; font-size: 12px;">
+                        <strong>🚤 Access:</strong><br>
+                        ${lake.access}
+                    </div>
+                    
+                    ${lake.tips ? `
+                    <div style="background: #f0f9ff; padding: 6px; border-radius: 6px; border-left: 3px solid #10b981; margin-top: 8px; font-size: 11px;">
+                        <strong>💡 Uncle PD's Notes:</strong><br>
+                        ${lake.tips}
+                    </div>
+                    ` : ''}
+                    
+                    <button onclick="getDirections(${lake.coords.lat}, ${lake.coords.lng})" 
+                            style="background: #10b981; color: white; border: none; padding: 6px 10px; border-radius: 4px; margin-top: 8px; cursor: pointer; font-size: 12px;">
+                        Get Directions
+                    </button>
+                </div>
+            `;
+
+            marker.bindPopup(popupContent, {
+                maxWidth: 320,
+                className: 'custom-popup'
+            });
+
+            customMarkers.push(marker);
+        }
+
+        // Add all custom markers to map
+        function addCustomMarkersToMap() {
+            customLakes.forEach(lake => {
+                addCustomLakeMarker(lake);
+            });
+        }
+
+        // View custom lake on map
+        function viewCustomLakeOnMap(lakeId) {
+            const lake = customLakes.find(l => l.id === lakeId);
+            if (lake && map) {
+                // Switch to map section
+                switchSection('map');
+                // Center on the lake
+                map.setView([lake.coords.lat, lake.coords.lng], 14);
+                // Find and open the marker popup
+                const marker = customMarkers.find(m => m.options.title.includes(lake.name));
+                if (marker) {
+                    marker.openPopup();
+                }
+            }
+        }
+
+        // Delete custom lake
+        function deleteCustomLake(lakeId) {
+            if (confirm('Are you sure you want to delete this secret spot?')) {
+                // Remove from array
+                customLakes = customLakes.filter(l => l.id !== lakeId);
+                
+                // Remove marker from map
+                const markerIndex = customMarkers.findIndex(m => m.options.title.includes(customLakes.find(l => l.id === lakeId)?.name || ''));
+                if (markerIndex > -1) {
+                    map.removeLayer(customMarkers[markerIndex]);
+                    customMarkers.splice(markerIndex, 1);
+                }
+                
+                // Save and refresh display
+                saveCustomLakes();
+                displayCustomLakes();
+            }
+        }
+        let map;
+        let currentMapLayer = 'street';
+        let markers = [];
+
+        function initMap() {
+            // Center on Northwest Indiana
+            const nwIndiana = [41.4500, -87.0000];
+            
+            map = L.map('map', {
+                center: nwIndiana,
+                zoom: 9,
+                zoomControl: false
+            });
+
+            // Add zoom control to bottom right
+            L.control.zoom({
+                position: 'bottomright'
+            }).addTo(map);
+
+            // Street map layer
+            const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 18
+            });
+
+            // Satellite layer
+            const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                attribution: '© Esri, Maxar, GeoEye, Earthstar Geographics, CNES/Airbus DS',
+                maxZoom: 18
+            });
+
+            streetLayer.addTo(map);
+            
+            // Store layers for toggling
+            map.streetLayer = streetLayer;
+            map.satelliteLayer = satelliteLayer;
+            
+            // Set map bounds to Northwest Indiana region (200-mile radius)
+            const bounds = L.latLngBounds(
+                [40.0, -89.0], // Southwest
+                [43.0, -84.5]  // Northeast
+            );
+            map.setMaxBounds(bounds);
+            
+            // Add lake markers
+            Object.keys(lakeData).forEach(lakeId => {
+                addLakeMarker(lakeId, lakeData[lakeId]);
+            });
+        }
+
+        function addLakeMarker(lakeId, lake) {
+            // Create custom icon
+            const fishIcon = L.divIcon({
+                className: 'custom-fish-marker',
+                html: '<i class="fas fa-fish" style="color: white; font-size: 14px;"></i>',
+                iconSize: [30, 30],
+                iconAnchor: [15, 15],
+                popupAnchor: [0, -15]
+            });
+
+            const marker = L.marker([lake.coords.lat, lake.coords.lng], {
+                icon: fishIcon,
+                title: lake.name
+            }).addTo(map);
+
+            const popupContent = `
+                <div style="max-width: 300px; padding: 5px;">
+                    <h3 style="margin: 0 0 10px 0; color: #1e293b; font-size: 16px;">${lake.name}</h3>
+                    <div style="margin-bottom: 8px; font-size: 13px;">
+                        <strong>Size:</strong> ${lake.size}<br>
+                        <strong>Max Depth:</strong> ${lake.depth}
+                    </div>
+                    
+                    <div style="margin-bottom: 8px;">
+                        <strong>🐟 Fish Species:</strong><br>
+                        ${lake.fish.map(fish => `<span style="background: #e0f2fe; padding: 2px 6px; border-radius: 8px; margin: 1px; display: inline-block; font-size: 11px;">${fish}</span>`).join('')}
+                    </div>
+                    
+                    <div style="margin-bottom: 8px; font-size: 12px;">
+                        <strong>🎣 Best Techniques:</strong><br>
+                        ${lake.techniques.join(', ')}
+                    </div>
+                    
+                    <div style="margin-bottom: 8px; font-size: 12px;">
+                        <strong>🚤 Access:</strong><br>
+                        ${lake.access}
+                    </div>
+                    
+                    <div style="background: #f0f9ff; padding: 6px; border-radius: 6px; border-left: 3px solid #0ea5e9; margin-top: 8px; font-size: 11px;">
+                        <strong>💡 Pro Tip:</strong><br>
+                        ${lake.tips}
+                    </div>
+                    
+                    <button onclick="getDirections(${lake.coords.lat}, ${lake.coords.lng})" 
+                            style="background: #2563eb; color: white; border: none; padding: 6px 10px; border-radius: 4px; margin-top: 8px; cursor: pointer; font-size: 12px;">
+                        Get Directions
+                    </button>
+                </div>
+            `;
+
+            marker.bindPopup(popupContent, {
+                maxWidth: 320,
+                className: 'custom-popup'
+            });
+
+            markers.push(marker);
+        }
+
+        function toggleMapType() {
+            if (currentMapLayer === 'street') {
+                map.removeLayer(map.streetLayer);
+                map.addLayer(map.satelliteLayer);
+                currentMapLayer = 'satellite';
+            } else {
+                map.removeLayer(map.satelliteLayer);
+                map.addLayer(map.streetLayer);
+                currentMapLayer = 'street';
+            }
+        }
+
+        function findMyLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const userLocation = [position.coords.latitude, position.coords.longitude];
+                        
+                        map.setView(userLocation, 12);
+                        
+                        // Add user location marker
+                        const userIcon = L.divIcon({
+                            className: 'user-location-marker',
+                            html: '<i class="fas fa-crosshairs" style="color: white; font-size: 12px;"></i>',
+                            iconSize: [24, 24],
+                            iconAnchor: [12, 12]
+                        });
+                        
+                        L.marker(userLocation, {
+                            icon: userIcon,
+                            title: 'Your Location'
+                        }).addTo(map).bindPopup('📍 Your Current Location');
+                    },
+                    () => {
+                        alert('Error: The Geolocation service failed.');
+                    }
+                );
+            } else {
+                alert('Error: Your browser doesn\'t support geolocation.');
+            }
+        }
+
+        function showAllLakes() {
+            const group = new L.featureGroup(markers);
+            map.fitBounds(group.getBounds().pad(0.1));
+        }
+
+        function getDirections(lat, lng) {
+            const destination = `${lat},${lng}`;
+            const url = `https://www.google.com/maps/dir/?api=1&destination=${destination}`;
+            window.open(url, '_blank');
+        }
+
+        // Load the map
+        function loadGoogleMaps() {
+            // Initialize OpenStreetMap instead
+            initMap();
+        }
+
+        function initDemoMap() {
+            // This function is no longer needed since we have a real map
+            initMap();
+        }
+
+        // Lake marker interactions (updated for both real and demo maps)
+        function attachMarkerListeners() {
+            document.querySelectorAll('.demo-marker, .lake-marker').forEach(marker => {
+                marker.addEventListener('click', function() {
+                    const lakeId = this.dataset.lake;
+                    showLakeInfo(lakeId);
+                });
+            });
+        }
+
+        // Navigation
+        function switchSection(sectionId) {
+            const sections = document.querySelectorAll('.section');
+            const buttons = document.querySelectorAll('.nav-btn');
+            
+            sections.forEach(section => section.classList.remove('active'));
+            buttons.forEach(btn => btn.classList.remove('active'));
+            
+            document.getElementById(sectionId).classList.add('active');
+            document.querySelector(`[data-section="${sectionId}"]`).classList.add('active');
+        }
+
+        function showLakeInfo(lakeId) {
+            const lake = lakeData[lakeId];
+            const lakeInfo = document.getElementById('lakeInfo');
+            const lakeTitle = document.getElementById('lakeTitle');
+            const lakeContent = document.getElementById('lakeContent');
+            
+            lakeTitle.textContent = lake.name;
+            lakeContent.innerHTML = `
+                <div style="margin-bottom: 1rem;">
+                    <strong>Size:</strong> ${lake.size}<br>
+                    <strong>Max Depth:</strong> ${lake.depth}
+                </div>
+                
+                <div style="margin-bottom: 1rem;">
+                    <strong>🐟 Fish Species:</strong><br>
+                    ${lake.fish.map(fish => `<span style="background: #e0f2fe; padding: 0.25rem 0.5rem; border-radius: 10px; margin: 0.25rem; display: inline-block;">${fish}</span>`).join('')}
+                </div>
+                
+                <div style="margin-bottom: 1rem;">
+                    <strong>🎣 Best Techniques:</strong><br>
+                    ${lake.techniques.map(tech => `• ${tech}`).join('<br>')}
+                </div>
+                
+                <div style="margin-bottom: 1rem;">
+                    <strong>🚤 Access:</strong><br>
+                    ${lake.access}
+                </div>
+                
+                <div style="margin-bottom: 1rem;">
+                    <strong>📋 Regulations:</strong><br>
+                    ${lake.regulations}
+                </div>
+                
+                <div style="background: #f0f9ff; padding: 1rem; border-radius: 10px; border-left: 4px solid #0ea5e9;">
+                    <strong>💡 Pro Tip:</strong><br>
+                    ${lake.tips}
+                </div>
+            `;
+            
+            lakeInfo.classList.add('show');
+        }
+
+        function closeLakeInfo() {
+            document.getElementById('lakeInfo').classList.remove('show');
+        }
+
+        // Chat functionality
+        let isAIResponding = false;
+
+        function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (message && !isAIResponding) {
+                addMessage(message, 'user');
+                input.value = '';
+                generateAIResponse(message);
+            }
+        }
+
+        function sendQuickMessage(message) {
+            addMessage(message, 'user');
+            generateAIResponse(message);
+        }
+
+        function addMessage(text, sender) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender} fade-in`;
+            messageDiv.innerHTML = text;
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function addTypingIndicator() {
+            const messagesContainer = document.getElementById('chatMessages');
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'message ai loading';
+            typingDiv.id = 'typingIndicator';
+            typingDiv.innerHTML = `
+                <div class="typing-indicator">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
+                AI is thinking...
+            `;
+            messagesContainer.appendChild(typingDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function removeTypingIndicator() {
+            const indicator = document.getElementById('typingIndicator');
+            if (indicator) {
+                indicator.remove();
+            }
+        }
+
+        async function generateAIResponse(userMessage) {
+            if (isAIResponding) return;
+            
+            isAIResponding = true;
+            addTypingIndicator();
+            
+            // Simulate AI processing time
+            await new Promise(resolve => setTimeout(resolve, 1500 + Math.random() * 1000));
+            
+            removeTypingIndicator();
+            
+            // Generate contextual response based on user message
+            let response = getContextualResponse(userMessage.toLowerCase());
+            
+            addMessage(response, 'ai');
+            isAIResponding = false;
+        }
+
+        function getContextualResponse(message) {
+            const responses = {
+                'spots': `Based on current conditions, here are the top fishing spots in NW Indiana today:
+
+🎯 **Cedar Lake** - Excellent for bass around fallen timber on the north shore
+🎯 **Lake Michigan** - Steelhead are running near Michigan City harbor
+🎯 **Tippecanoe Lake** - Walleye active in 15-20ft depths on the east side
+
+The morning bite has been particularly good with partly cloudy skies and light winds!`,
+
+                'biting': `Here's what's actively feeding this week in NW Indiana:
+
+🐟 **Largemouth Bass** - Very active on spinnerbaits and Texas rigs
+🐟 **Steelhead** - Excellent runs in Lake Michigan tributaries
+🐟 **Walleye** - Best success trolling in deeper waters
+🐟 **Bluegill** - Spawning activity, try small jigs near shallow cover
+
+Water temps in the upper 60s are perfect for most species!`,
+
+                'regulations': `Current Indiana fishing regulations:
+
+📋 **License Required** - All anglers 18+ need valid Indiana fishing license
+📋 **Bass** - No size limit, 5 daily limit (most lakes)
+📋 **Walleye** - 14" minimum, 5 daily limit
+📋 **Steelhead** - No size limit, 5 daily limit
+📋 **Bluegill** - No size limit, 25 daily limit
+
+Always check lake-specific regulations as some waters have special rules!`,
+
+                'bait': `Best bait for current conditions (68°F water, light wind):
+
+🎣 **Topwater** - Buzzbaits and poppers for early morning bass
+🎣 **Spinnerbaits** - White/chartreuse for stained water
+🎣 **Jigs** - 1/4oz with trailers for bass in cover
+🎣 **Live Bait** - Nightcrawlers for walleye and catfish
+🎣 **Spoons** - Silver for Lake Michigan salmon and steelhead
+
+The overcast conditions are perfect for reaction baits!`,
+
+                'weather': `Current fishing weather outlook:
+
+🌤️ **Today**: 72°F, partly cloudy, SW winds 8mph - **Excellent** conditions
+🌡️ **Water Temp**: 68°F - Prime for bass, walleye, and pike
+📊 **Barometric Pressure**: Stable - Fish should be actively feeding
+🌅 **Best Times**: Dawn (6:30-8:30 AM) and dusk (7:00-9:00 PM)
+
+This is ideal fishing weather - get out there!`,
+
+                'techniques': `Top techniques for NW Indiana right now:
+
+🎯 **Bass Fishing**: Texas rig with creature baits around cover
+🎯 **Walleye**: Slow trolling with crawler harnesses
+🎯 **Steelhead**: Drift fishing with spawn bags
+🎯 **Panfish**: Small jigs under bobbers near spawning beds
+
+Focus on structure transitions and current breaks for best results!`
+            };
+
+            // Match user message to response categories
+            if (message.includes('spot') || message.includes('where') || message.includes('location')) {
+                return responses.spots;
+            } else if (message.includes('biting') || message.includes('active') || message.includes('fish')) {
+                return responses.biting;
+            } else if (message.includes('regulation') || message.includes('rule') || message.includes('limit') || message.includes('legal')) {
+                return responses.regulations;
+            } else if (message.includes('bait') || message.includes('lure') || message.includes('what to use')) {
+                return responses.bait;
+            } else if (message.includes('weather') || message.includes('condition')) {
+                return responses.weather;
+            } else if (message.includes('technique') || message.includes('how') || message.includes('method')) {
+                return responses.techniques;
+            } else {
+                return `Great question! For Northwest Indiana fishing, I'd recommend checking current conditions and focusing on structure fishing. 
+
+The lakes here are producing well right now with water temps around 68°F. Cedar Lake and Lake Michigan are particularly hot spots.
+
+Would you like specific information about:
+• Best fishing spots today
+• What fish are actively biting
+• Current regulations and limits
+• Recommended baits and techniques
+
+Just ask and I'll give you detailed local insights!`;
+            }
+        }
+
+        function startVoiceInput() {
+            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                const recognition = new SpeechRecognition();
+                
+                recognition.continuous = false;
+                recognition.interimResults = false;
+                recognition.lang = 'en-US';
+                
+                recognition.onstart = function() {
+                    document.querySelector('.voice-btn i').className = 'fas fa-circle';
+                    document.querySelector('.voice-btn').style.background = '#ef4444';
+                };
+                
+                recognition.onresult = function(event) {
+                    const result = event.results[0][0].transcript;
+                    document.getElementById('chatInput').value = result;
+                };
+                
+                recognition.onend = function() {
+                    document.querySelector('.voice-btn i').className = 'fas fa-microphone';
+                    document.querySelector('.voice-btn').style.background = '#2563eb';
+                };
+                
+                recognition.start();
+            } else {
+                alert('Voice recognition not supported in this browser');
+            }
+        }
+
+        // Event listeners
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const section = this.dataset.section;
+                switchSection(section);
+            });
+        });
+
+        document.getElementById('chatInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // Simulate real-time data updates
+        function updateConditions() {
+            const conditions = [
+                { temp: '72°F', water: '68°F', wind: '8 mph', status: 'Excellent' },
+                { temp: '74°F', water: '69°F', wind: '5 mph', status: 'Perfect' },
+                { temp: '71°F', water: '67°F', wind: '12 mph', status: 'Good' },
+                { temp: '73°F', water: '68°F', wind: '6 mph', status: 'Excellent' }
+            ];
+            
+            const current = conditions[Math.floor(Math.random() * conditions.length)];
+            
+            document.getElementById('temperature').textContent = current.temp;
+            document.getElementById('waterTemp').textContent = current.water;
+            document.getElementById('windSpeed').textContent = current.wind;
+            document.getElementById('fishingConditions').textContent = current.status;
+        }
+
+        // Update conditions every 30 seconds
+        setInterval(updateConditions, 30000);
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add welcome animation
+            setTimeout(() => {
+                document.querySelector('.app-container').style.opacity = '1';
+            }, 100);
+            
+            // Initial conditions update
+            updateConditions();
+            
+            // Load OpenStreetMap
+            loadGoogleMaps();
+            
+            // Load Uncle PD's custom lakes
+            loadCustomLakes();
+        });
+
+        // Offline support (would be implemented with actual service worker file in production)
+        // Service worker registration removed for demo - would be added in production deployment
+
+        // Handle app installation
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            
+            // Show install banner
+            const installBanner = document.createElement('div');
+            installBanner.innerHTML = `
+                <div style="position: fixed; bottom: 20px; left: 20px; right: 20px; background: #2563eb; color: white; padding: 1rem; border-radius: 10px; z-index: 9999; display: flex; justify-content: space-between; align-items: center;">
+                    <span>📱 Install this app for the best experience!</span>
+                    <button onclick="installApp()" style="background: white; color: #2563eb; border: none; padding: 0.5rem 1rem; border-radius: 5px; cursor: pointer;">Install</button>
+                </div>
+            `;
+            document.body.appendChild(installBanner);
+        });
+
+        function installApp() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    deferredPrompt = null;
+                    document.querySelector('[style*="position: fixed; bottom: 20px"]').remove();
+                });
+            }
+        }
+
+        // GPS location for nearby lakes
+        function findNearbyLakes() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+                    
+                    addMessage(`📍 Current location: ${lat.toFixed(4)}, ${lon.toFixed(4)}\n\nBased on your location, here are the nearest fishing spots:\n\n🎣 Cedar Lake - 2.3 miles north\n🎣 Lake Michigan - 8.7 miles northwest\n🎣 Winona Lake - 12.1 miles south\n\nWould you like directions to any of these locations?`, 'ai');
+                }, function(error) {
+                    addMessage('Unable to get your location. Please enable location services for the best experience with nearby lake recommendations.', 'ai');
+                });
+            }
+        }
+
+        // Add location button to quick actions
+        document.addEventListener('DOMContentLoaded', function() {
+            const quickActions = document.querySelector('.quick-actions');
+            const locationBtn = document.createElement('button');
+            locationBtn.className = 'quick-action';
+            locationBtn.onclick = findNearbyLakes;
+            locationBtn.innerHTML = '<i class="fas fa-location-arrow"></i><br>Near Me';
+            quickActions.appendChild(locationBtn);
+        });
+    </script>
+</body>
+</html>
