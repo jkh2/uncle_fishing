@@ -1552,10 +1552,9 @@
             addTypingIndicator();
             
             try {
-                // Try multiple free LLM APIs in order of preference
-                let response = await tryGroqAPI(userMessage) || 
-                              await tryHuggingFaceAPI(userMessage) || 
-                              await tryTogetherAPI(userMessage) ||
+                // Try completely free APIs with NO signup required
+                let response = await tryFreeGPTAPI(userMessage) || 
+                              await tryAnonChatGPT(userMessage) ||
                               getContextualResponse(userMessage.toLowerCase());
                 
                 removeTypingIndicator();
@@ -1565,7 +1564,7 @@
                 console.log('AI API Error:', error);
                 removeTypingIndicator();
                 
-                // Fallback to contextual response
+                // Fallback to enhanced contextual response
                 let fallbackResponse = getContextualResponse(userMessage.toLowerCase());
                 addMessage(fallbackResponse, 'ai');
             }
@@ -1573,92 +1572,67 @@
             isAIResponding = false;
         }
 
-        // Try Groq API (free tier, very fast)
-        async function tryGroqAPI(userMessage) {
+        // Free GPT API - NO signup, NO account needed!
+        async function tryFreeGPTAPI(userMessage) {
             try {
-                const systemPrompt = `You are Uncle PD's personal AI fishing assistant for Northwest Indiana. You're knowledgeable about local lakes, fish species, techniques, weather conditions, and Indiana fishing regulations. Be helpful, friendly, and specific to the Northwest Indiana region. Keep responses conversational and practical for an experienced angler.`;
+                const fishingPrompt = `You are Uncle PD's fishing assistant for Northwest Indiana. He's asking: "${userMessage}". Give helpful, specific advice about fishing in Northwest Indiana lakes like Cedar Lake, Wolf Lake, Lake Michigan, etc. Keep it under 150 words and be encouraging.`;
                 
-                const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-                    method: 'POST',
+                const response = await fetch(`https://free-unoficial-gpt4o-mini-api-g70n.onrender.com/chat/?query=${encodeURIComponent(fishingPrompt)}`, {
+                    method: 'GET',
                     headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer gsk_' // Would need real API key
-                    },
-                    body: JSON.stringify({
-                        model: 'llama3-8b-8192',
-                        messages: [
-                            { role: 'system', content: systemPrompt },
-                            { role: 'user', content: userMessage }
-                        ],
-                        max_tokens: 300,
-                        temperature: 0.7
-                    })
+                        'Accept': 'application/json'
+                    }
                 });
                 
                 if (response.ok) {
                     const data = await response.json();
-                    return data.choices[0].message.content;
-                }
-            } catch (error) {
-                console.log('Groq API unavailable');
-                return null;
-            }
-        }
-
-        // Try Hugging Face Inference API (free)
-        async function tryHuggingFaceAPI(userMessage) {
-            try {
-                const prompt = `You are Uncle PD's fishing assistant for Northwest Indiana. User asks: "${userMessage}". Give helpful, local fishing advice:`;
-                
-                const response = await fetch('https://api-inference.huggingface.co/models/microsoft/DialoGPT-medium', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        inputs: prompt,
-                        parameters: {
-                            max_length: 200,
-                            temperature: 0.7
-                        }
-                    })
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data[0] && data[0].generated_text) {
-                        return data[0].generated_text.replace(prompt, '').trim();
+                    if (data && data.response) {
+                        return data.response;
                     }
                 }
+                return null;
+                
             } catch (error) {
-                console.log('Hugging Face API unavailable');
+                console.log('Free GPT API unavailable:', error);
                 return null;
             }
         }
 
-        // Try Together AI (free tier)
-        async function tryTogetherAPI(userMessage) {
+        // Backup anonymous AI API
+        async function tryAnonChatGPT(userMessage) {
             try {
-                const response = await fetch('https://api.together.xyz/inference', {
+                // Try a simple proxy that doesn't require auth
+                const response = await fetch('https://api.g4f.icu/chat/completions', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' // Would need real API key
                     },
                     body: JSON.stringify({
-                        model: 'togethercomputer/llama-2-7b-chat',
-                        prompt: `You are Uncle PD's fishing assistant for Northwest Indiana. Answer this fishing question: ${userMessage}`,
-                        max_tokens: 200,
-                        temperature: 0.7
+                        model: 'gpt-3.5-turbo',
+                        messages: [
+                            {
+                                role: 'system',
+                                content: 'You are Uncle PD\'s fishing assistant for Northwest Indiana. Give helpful advice about local lakes, fish species, and techniques.'
+                            },
+                            {
+                                role: 'user',
+                                content: userMessage
+                            }
+                        ],
+                        stream: false
                     })
                 });
                 
                 if (response.ok) {
                     const data = await response.json();
-                    return data.output.choices[0].text;
+                    if (data.choices && data.choices[0] && data.choices[0].message) {
+                        return data.choices[0].message.content;
+                    }
                 }
+                return null;
+                
             } catch (error) {
-                console.log('Together AI unavailable');
+                console.log('Anonymous ChatGPT unavailable:', error);
                 return null;
             }
         }
