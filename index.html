@@ -264,9 +264,115 @@
             border-color: #2563eb;
         }
 
-        .lake-action-btn.delete {
+        .map-control-btn.delete {
             color: #ef4444;
             border-color: #ef4444;
+        }
+
+        .map-control-btn.active {
+            background: #2563eb;
+            color: white;
+        }
+
+        .quick-add-form {
+            position: fixed;
+            bottom: -400px;
+            left: 0;
+            right: 0;
+            background: white;
+            border-radius: 20px 20px 0 0;
+            padding: 1.5rem;
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.2);
+            transition: bottom 0.3s ease;
+            z-index: 1002;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        .quick-add-form.show {
+            bottom: 0;
+        }
+
+        .quick-add-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .quick-add-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #1e293b;
+            margin: 0;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+            color: #374151;
+            font-size: 0.9rem;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.5rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 5px;
+            font-size: 0.9rem;
+        }
+
+        .form-input:focus {
+            border-color: #2563eb;
+            outline: none;
+        }
+
+        .form-textarea {
+            width: 100%;
+            padding: 0.5rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 5px;
+            min-height: 60px;
+            resize: vertical;
+            font-size: 0.9rem;
+        }
+
+        .form-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .btn-save {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            flex: 1;
+            font-weight: bold;
+        }
+
+        .btn-cancel {
+            background: #6b7280;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
         }
 
         .custom-popup .leaflet-popup-content-wrapper {
@@ -559,6 +665,9 @@
                         <button class="map-control-btn" onclick="showAllLakes()" title="Show All Lakes">
                             <i class="fas fa-fish"></i>
                         </button>
+                        <button class="map-control-btn" id="addSpotBtn" onclick="toggleAddSpotMode()" title="Click Map to Add Spot">
+                            <i class="fas fa-map-pin"></i>
+                        </button>
                     </div>
                 </div>
 
@@ -573,6 +682,57 @@
                     <div id="lakeContent">
                         <!-- Lake details will be populated here -->
                     </div>
+                </div>
+
+                <!-- Quick Add Spot Form -->
+                <div class="quick-add-form" id="quickAddForm">
+                    <div class="quick-add-header">
+                        <h3 class="quick-add-title">🎣 Add Fishing Spot</h3>
+                        <button class="close-btn" onclick="hideQuickAddForm()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <form onsubmit="saveQuickSpot(event)">
+                        <div class="form-group">
+                            <label class="form-label">Spot Name:</label>
+                            <input type="text" id="quickSpotName" class="form-input" placeholder="e.g., Uncle PD's Secret Bass Hole" required>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Latitude:</label>
+                                <input type="number" id="quickLat" class="form-input" step="any" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Longitude:</label>
+                                <input type="number" id="quickLng" class="form-input" step="any" readonly>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">What did you catch? (optional):</label>
+                            <input type="text" id="quickFish" class="form-input" placeholder="e.g., 3lb Bass, Bluegill, Walleye">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">What worked? (optional):</label>
+                            <input type="text" id="quickTechniques" class="form-input" placeholder="e.g., Spinnerbait, Texas rig, Live bait">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Notes (optional):</label>
+                            <textarea id="quickNotes" class="form-textarea" placeholder="Water depth, structure, time of day, weather..."></textarea>
+                        </div>
+                        
+                        <div class="form-buttons">
+                            <button type="submit" class="btn-save">
+                                <i class="fas fa-save"></i> Save Spot
+                            </button>
+                            <button type="button" class="btn-cancel" onclick="hideQuickAddForm()">
+                                Cancel
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </section>
 
@@ -1019,7 +1179,75 @@
             }
         };
 
-        // Custom lakes storage and management
+        // Quick add spot functionality
+        let addSpotMode = false;
+        let selectedCoords = null;
+
+        function toggleAddSpotMode() {
+            addSpotMode = !addSpotMode;
+            const btn = document.getElementById('addSpotBtn');
+            
+            if (addSpotMode) {
+                btn.classList.add('active');
+                btn.title = 'Click anywhere on map to add spot (Active)';
+                map.getContainer().style.cursor = 'crosshair';
+                
+                // Show instruction message
+                addMessage("🎯 Map clicking enabled! Click anywhere on the map to add a fishing spot at that location.", 'ai');
+                if (document.querySelector('[data-section="chat"]').classList.contains('active')) {
+                    // Already on chat tab, good
+                } else {
+                    setTimeout(() => {
+                        addMessage("💡 You can switch back to the Map tab and click anywhere to mark a spot!", 'ai');
+                    }, 1000);
+                }
+            } else {
+                btn.classList.remove('active');
+                btn.title = 'Click Map to Add Spot';
+                map.getContainer().style.cursor = '';
+            }
+        }
+
+        function hideQuickAddForm() {
+            document.getElementById('quickAddForm').classList.remove('show');
+            selectedCoords = null;
+        }
+
+        function saveQuickSpot(event) {
+            event.preventDefault();
+            
+            if (!selectedCoords) return;
+            
+            const spotData = {
+                id: 'quick_' + Date.now(),
+                name: document.getElementById('quickSpotName').value,
+                coords: selectedCoords,
+                size: 'Fishing spot',
+                depth: 'Unknown',
+                fish: document.getElementById('quickFish').value.split(',').map(f => f.trim()).filter(f => f),
+                techniques: document.getElementById('quickTechniques').value.split(',').map(t => t.trim()).filter(t => t),
+                access: 'Personal fishing spot',
+                tips: document.getElementById('quickNotes').value || 'Quick spot added from map',
+                dateAdded: new Date().toLocaleDateString()
+            };
+            
+            customLakes.push(spotData);
+            saveCustomLakes();
+            displayCustomLakes();
+            addCustomLakeMarker(spotData);
+            hideQuickAddForm();
+            
+            // Turn off add spot mode
+            addSpotMode = false;
+            document.getElementById('addSpotBtn').classList.remove('active');
+            map.getContainer().style.cursor = '';
+            
+            // Clear form
+            document.querySelector('#quickAddForm form').reset();
+            
+            // Show success message
+            addMessage(`🎣 "${spotData.name}" saved to your secret spots! You can view it in the "My Lakes" section.`, 'ai');
+        }
         let customLakes = [];
         let customMarkers = [];
 
@@ -1300,6 +1528,28 @@
             // Add lake markers
             Object.keys(lakeData).forEach(lakeId => {
                 addLakeMarker(lakeId, lakeData[lakeId]);
+            });
+
+            // Add click handler for adding spots
+            map.on('click', function(e) {
+                if (addSpotMode) {
+                    selectedCoords = {
+                        lat: e.latlng.lat,
+                        lng: e.latlng.lng
+                    };
+                    
+                    // Fill in coordinates
+                    document.getElementById('quickLat').value = e.latlng.lat.toFixed(6);
+                    document.getElementById('quickLng').value = e.latlng.lng.toFixed(6);
+                    
+                    // Show the quick add form
+                    document.getElementById('quickAddForm').classList.add('show');
+                    
+                    // Auto-focus the name field
+                    setTimeout(() => {
+                        document.getElementById('quickSpotName').focus();
+                    }, 300);
+                }
             });
         }
 
