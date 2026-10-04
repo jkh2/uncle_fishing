@@ -498,6 +498,40 @@
             cursor: pointer;
         }
 
+        .map-hint {
+            position: absolute;
+            left: 12px;
+            right: 64px;
+            top: 12px;
+            background: rgba(15, 23, 42, 0.88);
+            color: white;
+            padding: 0.6rem 0.8rem;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .map-hint.show {
+            opacity: 1;
+        }
+
+        .leaflet-tooltip.depth-label {
+            background: rgba(255, 255, 255, 0.85);
+            border: none;
+            box-shadow: none;
+            color: #0b3d91;
+            font-weight: bold;
+            font-size: 11px;
+            padding: 0 3px;
+        }
+
+        .leaflet-tooltip.depth-label::before {
+            display: none;
+        }
+
         .custom-popup .leaflet-popup-content-wrapper {
             border-radius: 10px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.15);
@@ -915,6 +949,12 @@
                         </button>
                         <button class="map-control-btn" id="addSpotBtn" onclick="toggleAddSpotMode()" title="Click Map to Add Spot">
                             <i class="fas fa-map-pin"></i>
+                        </button>
+                        <button class="map-control-btn" id="accessBtn" onclick="toggleAccessSites()" title="DNR boat ramps and access sites">
+                            <i class="fas fa-anchor"></i>
+                        </button>
+                        <button class="map-control-btn" id="depthBtn" onclick="toggleDepthLines()" title="Lake depth lines">
+                            <i class="fas fa-water"></i>
                         </button>
                     </div>
                 </div>
@@ -1836,6 +1876,9 @@
                 addLakeMarker(lakeId, lakeData[lakeId]);
             });
 
+            // DNR access sites and depth lines
+            initDnrLayers();
+
             // Add click handler for adding spots
             map.on('click', function(e) {
                 if (addSpotMode) {
@@ -1961,6 +2004,271 @@
             } else {
                 alert('Error: Your browser doesn\'t support geolocation.');
             }
+        }
+
+        // Indiana DNR data: every public fishing access site, and depth contour lines for surveyed lakes
+        const DNR_BASE = 'https://gisdata.in.gov/server/rest/services/Hosted';
+        const ACCESS_CACHE_KEY = 'unclePDAccessSites';
+        const ACCESS_CACHE_DAYS = 30;
+        const DEPTH_MIN_ZOOM = 12;
+        const DEPTH_LABEL_ZOOM = 15;
+        let accessLayer = null;
+        let depthLayer = null;
+        let depthLabels = null;
+        const loadedContours = new Set();
+        let showAccessSites = localStorage.getItem('unclePDShowAccess') !== 'off';
+        let showDepthLines = localStorage.getItem('unclePDShowDepth') !== 'off';
+        let depthRequestTimer = null;
+
+        function isYes(value) {
+            return value != null && String(value).trim() !== '' && !/^(n|no|none|0|false)$/i.test(String(value).trim());
+        }
+
+        function isLink(value) {
+            return typeof value === 'string' && /^https?:\/\//i.test(value.trim());
+        }
+
+        async function fetchAccessSites() {
+            const fields = ['objectid', 'site_name', 'waterbody', 'water_type', 'county', 'boat_ramp', 'shoreline', 'motor', 'motor_rest',
+                'fee', 'fees', 'ada_access', 'fishing_pier', 'boat_dock', 'restrooms', 'parking_info', 'species', 'species2',
+                'fish_report', 'fish_rpt', 'fish_rpt2', 'lake_depth', 'lake_depth2', 'comments', 'public_view', 'lat_y', 'long_x'];
+            const sites = [];
+            for (let offset = 0; offset < 20000; offset += 1000) {
+                const params = new URLSearchParams({
+                    where: '1=1', outFields: fields.join(','), returnGeometry: 'true', outSR: '4326',
+                    orderByFields: 'objectid', resultOffset: String(offset), resultRecordCount: '1000', f: 'json'
+                });
+                const response = await fetch(`${DNR_BASE}/Fish_Access_RO/FeatureServer/0/query?${params}`);
+                if (!response.ok) throw new Error('DNR returned ' + response.status);
+                const data = await response.json();
+                if (data.error) throw new Error(data.error.message || 'DNR query failed');
+                data.features.forEach(f => {
+                    const a = f.attributes;
+                    const lat = f.geometry ? f.geometry.y : a.lat_y;
+                    const lng = f.geometry ? f.geometry.x : a.long_x;
+                    if (lat == null || lng == null || /^n/i.test(a.public_view || '')) return;
+                    delete a.lat_y; delete a.long_x; delete a.public_view;
+                    Object.keys(a).forEach(k => { if (a[k] == null || String(a[k]).trim() === '') delete a[k]; });
+                    sites.push({ ...a, lat, lng });
+                });
+                if (!data.exceededTransferLimit) break;
+            }
+            return sites;
+        }
+
+        async function loadAccessSites() {
+            let cache = null;
+            try { cache = JSON.parse(localStorage.getItem(ACCESS_CACHE_KEY)); } catch (e) {}
+            if (cache && cache.sites && cache.sites.length) drawAccessSites(cache.sites);
+            if (cache && Date.now() - cache.fetchedAt < ACCESS_CACHE_DAYS * 86400000) return;
+            try {
+                const sites = await fetchAccessSites();
+                if (!sites.length) return;
+                drawAccessSites(sites);
+                try {
+                    localStorage.setItem(ACCESS_CACHE_KEY, JSON.stringify({ fetchedAt: Date.now(), sites }));
+                } catch (e) {
+                    console.log('Access sites too big to keep offline:', e);
+                }
+            } catch (error) {
+                console.log('DNR access sites unavailable:', error);
+            }
+        }
+
+        function accessSitePopup(site) {
+            const rows = [];
+            const row = (label, value) => { if (value != null && String(value).trim() !== '') rows.push(`<strong>${label}:</strong> ${escapeHTML(value)}`); };
+            row('Boat ramp', site.boat_ramp);
+            row('Motors', [site.motor, site.motor_rest].filter(Boolean).join(', '));
+            row('Bank fishing', site.shoreline);
+            row('Fishing pier', site.fishing_pier);
+            row('Fee', site.fees || site.fee);
+            row('Accessible', site.ada_access);
+            row('Restrooms', site.restrooms);
+            row('Parking', site.parking_info);
+            row('Notes', site.comments);
+
+            const species = [site.species, site.species2].filter(Boolean).join(', ')
+                .split(/[,;]+/).map(s => s.trim()).filter(Boolean);
+            const links = [];
+            [site.fish_report, site.fish_rpt, site.fish_rpt2].filter(isLink).forEach((url, i) =>
+                links.push(`<a href="${escapeHTML(url.trim())}" target="_blank" rel="noopener">📋 DNR fish survey${i ? ' ' + (i + 1) : ''}</a>`));
+            [site.lake_depth, site.lake_depth2].filter(isLink).forEach((url, i) =>
+                links.push(`<a href="${escapeHTML(url.trim())}" target="_blank" rel="noopener">🗺️ Depth map${i ? ' ' + (i + 1) : ''}</a>`));
+
+            const name = site.site_name || site.waterbody || 'Public access site';
+            const where = [site.waterbody && site.waterbody !== name ? site.waterbody : null, site.county ? site.county + ' County' : null].filter(Boolean).join(' · ');
+            return `
+                <div style="max-width: 280px; font-size: 13px;">
+                    <h3 style="margin: 0 0 4px 0; color: #1e3a8a; font-size: 16px;">⚓ ${escapeHTML(name)}</h3>
+                    <div style="color: #64748b; font-size: 12px; margin-bottom: 8px;">${escapeHTML(where)} · DNR public access</div>
+                    ${rows.length ? `<div style="margin-bottom: 8px; line-height: 1.5;">${rows.join('<br>')}</div>` : ''}
+                    ${species.length ? `<div style="margin-bottom: 8px;"><strong>🐟 Species:</strong><br>${species.map(s => `<span style="background: #e0f2fe; padding: 2px 6px; border-radius: 8px; margin: 1px; display: inline-block; font-size: 11px;">${escapeHTML(s)}</span>`).join('')}</div>` : ''}
+                    ${links.length ? `<div style="margin-bottom: 8px; display: flex; flex-direction: column; gap: 4px;">${links.join('')}</div>` : ''}
+                    <button onclick="getDirections(${site.lat}, ${site.lng})" style="background: #2563eb; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px;">Directions</button>
+                    <button onclick="showConditionsForSite(${site.index})" style="background: #764ba2; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px;">Conditions</button>
+                </div>`;
+        }
+
+        let accessSites = [];
+
+        function drawAccessSites(sites) {
+            if (!map) return;
+            accessSites = sites;
+            sites.forEach((site, i) => { site.index = i; });
+            if (accessLayer) map.removeLayer(accessLayer);
+            const renderer = L.canvas({ padding: 0.5 });
+            accessLayer = L.layerGroup(sites.map(site => {
+                const ramp = isYes(site.boat_ramp);
+                const marker = L.circleMarker([site.lat, site.lng], {
+                    renderer,
+                    radius: 5,
+                    color: 'white',
+                    weight: 1.5,
+                    fillColor: ramp ? '#1e3a8a' : '#0d9488',
+                    fillOpacity: 0.95
+                });
+                marker.bindPopup(() => accessSitePopup(site), { maxWidth: 300, className: 'custom-popup' });
+                return marker;
+            }));
+            accessLayer.siteCount = sites.length;
+            updateAccessSiteSize();
+            if (showAccessSites) accessLayer.addTo(map);
+        }
+
+        function updateAccessSiteSize() {
+            if (!accessLayer) return;
+            const radius = map.getZoom() < 9 ? 3.5 : map.getZoom() < 12 ? 5 : 7;
+            accessLayer.eachLayer(m => m.setRadius(radius));
+        }
+
+        function toggleAccessSites() {
+            showAccessSites = !showAccessSites;
+            localStorage.setItem('unclePDShowAccess', showAccessSites ? 'on' : 'off');
+            document.getElementById('accessBtn').classList.toggle('active', showAccessSites);
+            if (!accessLayer) return;
+            if (showAccessSites) accessLayer.addTo(map); else map.removeLayer(accessLayer);
+            showMapHint(showAccessSites ? `⚓ ${accessLayer.siteCount} DNR access sites. Dark blue has a boat ramp; teal is bank or walk-in.` : 'Access sites hidden');
+        }
+
+        function toggleDepthLines() {
+            showDepthLines = !showDepthLines;
+            localStorage.setItem('unclePDShowDepth', showDepthLines ? 'on' : 'off');
+            document.getElementById('depthBtn').classList.toggle('active', showDepthLines);
+            if (showDepthLines) {
+                depthLayer.addTo(map);
+                depthLabels.addTo(map);
+                if (map.getZoom() < DEPTH_MIN_ZOOM) showMapHint('🌊 Zoom in on a lake to see its depth lines');
+                requestDepthLines();
+            } else {
+                map.removeLayer(depthLayer);
+                map.removeLayer(depthLabels);
+                showMapHint('Depth lines hidden');
+            }
+        }
+
+        function showMapHint(text) {
+            let hint = document.getElementById('mapHint');
+            if (!hint) {
+                hint = document.createElement('div');
+                hint.id = 'mapHint';
+                hint.className = 'map-hint';
+                document.querySelector('.map-container').appendChild(hint);
+            }
+            hint.textContent = text;
+            hint.classList.add('show');
+            clearTimeout(hint.timer);
+            hint.timer = setTimeout(() => hint.classList.remove('show'), 3500);
+        }
+
+        function requestDepthLines() {
+            clearTimeout(depthRequestTimer);
+            depthRequestTimer = setTimeout(loadDepthLines, 400);
+        }
+
+        async function loadDepthLines() {
+            if (!showDepthLines || map.getZoom() < DEPTH_MIN_ZOOM) return;
+            const b = map.getBounds();
+            const params = new URLSearchParams({
+                where: '1=1',
+                geometry: [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()].map(v => v.toFixed(5)).join(','),
+                geometryType: 'esriGeometryEnvelope', inSR: '4326', spatialRel: 'esriSpatialRelIntersects',
+                outFields: 'objectid,contour,lake_name,line_type,lake_max_depth', returnGeometry: 'true', outSR: '4326',
+                geometryPrecision: '6', maxAllowableOffset: '0.00002', resultRecordCount: '2000', f: 'geojson'
+            });
+            try {
+                const response = await fetch(`${DNR_BASE}/Lake_Bathymetry/FeatureServer/0/query?${params}`);
+                if (!response.ok) throw new Error('DNR returned ' + response.status);
+                const data = await response.json();
+                const fresh = (data.features || []).filter(f => {
+                    const id = f.id ?? f.properties.objectid;
+                    if (loadedContours.has(id)) return false;
+                    loadedContours.add(id);
+                    return true;
+                });
+                depthLayer.addData(fresh);
+                updateDepthLabels();
+            } catch (error) {
+                console.log('DNR depth lines unavailable:', error);
+            }
+        }
+
+        function contourStyle(feature) {
+            const index = /index/i.test(feature.properties.line_type || '');
+            return { color: index ? '#0b3d91' : '#3b82f6', weight: index ? 2 : 1, opacity: index ? 0.9 : 0.7 };
+        }
+
+        // Label the bold (index) contours with their depth once zoomed in close
+        function updateDepthLabels() {
+            depthLabels.clearLayers();
+            if (map.getZoom() < DEPTH_LABEL_ZOOM) return;
+            const view = map.getBounds();
+            let count = 0;
+            depthLayer.eachLayer(line => {
+                if (count >= 150 || !/index/i.test(line.feature.properties.line_type || '')) return;
+                const latlngs = line.getLatLngs().flat(2);
+                const mid = latlngs[Math.floor(latlngs.length / 2)];
+                if (!mid || !view.contains(mid)) return;
+                count++;
+                depthLabels.addLayer(L.tooltip({ permanent: true, direction: 'center', className: 'depth-label', interactive: false })
+                    .setLatLng(mid).setContent(`${line.feature.properties.contour}′`));
+            });
+        }
+
+        function initDnrLayers() {
+            depthLayer = L.geoJSON(null, {
+                style: contourStyle,
+                onEachFeature: (feature, layer) => {
+                    const p = feature.properties;
+                    layer.bindTooltip(`${p.contour} ft${p.lake_name ? ' · ' + p.lake_name : ''}${p.lake_max_depth ? ' (max ' + p.lake_max_depth + ' ft)' : ''}`, { sticky: true });
+                }
+            });
+            depthLabels = L.layerGroup();
+            if (showDepthLines) {
+                depthLayer.addTo(map);
+                depthLabels.addTo(map);
+            }
+            document.getElementById('accessBtn').classList.toggle('active', showAccessSites);
+            document.getElementById('depthBtn').classList.toggle('active', showDepthLines);
+            map.on('moveend', () => {
+                updateAccessSiteSize();
+                requestDepthLines();
+                updateDepthLabels();
+            });
+            loadAccessSites();
+            requestDepthLines();
+        }
+
+        // Conditions for any point on the map (DNR sites, etc.)
+        function showConditionsForPoint(name, lat, lng) {
+            const id = `pin:${lat.toFixed(4)},${lng.toFixed(4)}`;
+            localStorage.setItem('unclePDPinnedLocation', JSON.stringify({ id, name, coords: { lat, lng } }));
+            showConditionsFor(id);
+        }
+
+        function showConditionsForSite(index) {
+            const site = accessSites[index];
+            if (site) showConditionsForPoint(site.site_name || site.waterbody || 'DNR access site', site.lat, site.lng);
         }
 
         function showAllLakes() {
@@ -2457,12 +2765,15 @@ Just ask me anything specific about your fishing plans!`
         function escapeHTML(text) {
             const div = document.createElement('div');
             div.textContent = text == null ? '' : String(text);
-            return div.innerHTML;
+            return div.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
         }
 
         // Every place conditions can be shown for: public lakes, secret spots, and his phone's GPS
         function conditionsLocations() {
             const list = [{ id: 'my-location', name: '📍 My current location', coords: myLocationCoords }];
+            let pinned = null;
+            try { pinned = JSON.parse(localStorage.getItem('unclePDPinnedLocation')); } catch (e) {}
+            if (pinned && pinned.id) list.push({ id: pinned.id, name: '📌 ' + pinned.name, coords: pinned.coords });
             Object.keys(lakeData).forEach(id => list.push({ id, name: lakeData[id].name, coords: lakeData[id].coords }));
             customLakes.forEach(l => list.push({ id: l.id, name: '⭐ ' + l.name, coords: l.coords }));
             return list;
@@ -2683,7 +2994,7 @@ Just ask me anything specific about your fishing plans!`
 
             const minutesAgo = Math.round((Date.now() - data.fetchedAt) / 60000);
             const updated = document.getElementById('condUpdated');
-            updated.textContent = `Updated ${minutesAgo < 1 ? 'just now' : minutesAgo + ' min ago'} · ${data.name.replace(/^[📍⭐] /u, '')}`;
+            updated.textContent = `Updated ${minutesAgo < 1 ? 'just now' : minutesAgo + ' min ago'} · ${data.name.replace(/^[📍⭐📌] /u, '')}`;
             updated.classList.toggle('stale', minutesAgo > 60);
 
             const card = document.getElementById('scoreCard');
@@ -2749,7 +3060,7 @@ Just ask me anything specific about your fishing plans!`
             const { data, analysis: a } = conditionsState;
             const c = data.weather.current;
             const next = a.periods.find(p => p.end > new Date());
-            return `Here's what it looks like at <strong>${escapeHTML(data.name.replace(/^[📍⭐] /u, ''))}</strong> right now:<br><br>
+            return `Here's what it looks like at <strong>${escapeHTML(data.name.replace(/^[📍⭐📌] /u, ''))}</strong> right now:<br><br>
 🎣 <strong>Bite score: ${a.score}/10 (${a.rating})</strong><br>
 🌡️ ${Math.round(c.temperature_2m)}°F, ${weatherInfo(c.weather_code)[0].toLowerCase()}<br>
 🌬️ Wind ${Math.round(c.wind_speed_10m)} mph from the ${compassPoint(c.wind_direction_10m)}<br>
@@ -2869,8 +3180,10 @@ ${a.reasons.map(escapeHTML).join('<br>')}`;
                     const lat = position.coords.latitude;
                     const lon = position.coords.longitude;
                     
+                    const dnrSites = accessSites.map(site => ({ name: `⚓ ${site.site_name || 'Access site'}${site.waterbody && site.waterbody !== site.site_name ? ' (' + site.waterbody + ')' : ''}`, coords: { lat: site.lat, lng: site.lng } }));
                     const nearest = conditionsLocations()
-                        .filter(l => l.id !== 'my-location' && l.coords)
+                        .filter(l => l.id !== 'my-location' && !String(l.id).startsWith('pin:') && l.coords)
+                        .concat(dnrSites)
                         .map(l => ({ ...l, miles: distanceMiles(lat, lon, l.coords.lat, l.coords.lng), bearing: compassPoint(bearingDegrees(lat, lon, l.coords.lat, l.coords.lng)) }))
                         .sort((a, b) => a.miles - b.miles)
                         .slice(0, 5);

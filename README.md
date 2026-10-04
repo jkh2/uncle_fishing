@@ -27,6 +27,8 @@ Installs to your home screen like a real app (iPhone: Share, then "Add to Home S
 22+ Northwest Indiana lakes with detailed fishing information
 Click any red marker to see fish species, techniques, and access info
 Zoom and pan to explore the entire region
+Every Indiana DNR public access site (the anchor button): dark blue dots have a boat ramp, teal dots are bank or walk-in access. Tap one for motor rules, species, DNR fish survey reports, and depth maps
+Depth lines for DNR-surveyed lakes (the waves button): zoom in on a lake to see its contours, with depths labeled up close
 Toggle satellite view with the satellite button
 Find your location with the crosshairs button
 View all lakes with the fish button
