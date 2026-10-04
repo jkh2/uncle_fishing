@@ -532,6 +532,256 @@
             display: none;
         }
 
+        /* Catch log and trophy room */
+        .log-catch-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border: none;
+            border-radius: 15px;
+            padding: 1.1rem;
+            font-size: 1.25rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.35);
+        }
+
+        .stat-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        .stat-box {
+            background: #f1f5f9;
+            border-radius: 10px;
+            padding: 0.6rem 0.25rem;
+        }
+
+        .stat-box strong {
+            display: block;
+            font-size: 1.5rem;
+            color: #1e293b;
+        }
+
+        .stat-box span {
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+
+        .checklist {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+            margin: 0.5rem 0 1rem;
+        }
+
+        .check-chip {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.55rem;
+            border-radius: 999px;
+            background: #f1f5f9;
+            color: #94a3b8;
+            border: 1px dashed #cbd5e1;
+        }
+
+        .check-chip.got {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #86efac;
+            font-weight: 600;
+        }
+
+        .section-label {
+            font-weight: bold;
+            color: #1e293b;
+            font-size: 0.95rem;
+        }
+
+        .pb-row, .pattern-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 0.5rem;
+            padding: 0.45rem 0;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 0.9rem;
+        }
+
+        .badge-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+            text-align: center;
+        }
+
+        .badge {
+            font-size: 0.7rem;
+            color: #94a3b8;
+            filter: grayscale(1);
+            opacity: 0.5;
+        }
+
+        .badge.earned {
+            color: #1e293b;
+            filter: none;
+            opacity: 1;
+            font-weight: 600;
+        }
+
+        .badge .badge-icon {
+            font-size: 1.8rem;
+            display: block;
+        }
+
+        .catch-card {
+            display: flex;
+            gap: 0.75rem;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 0.75rem;
+            margin-bottom: 0.75rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .catch-thumb {
+            flex: 0 0 76px;
+            height: 76px;
+            border-radius: 10px;
+            object-fit: cover;
+            background: #e0f2fe;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+        }
+
+        .catch-body {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .catch-title {
+            font-weight: bold;
+            color: #1e293b;
+        }
+
+        .catch-meta {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin: 0.15rem 0 0.35rem;
+        }
+
+        .cond-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.25rem;
+        }
+
+        .cond-chip {
+            font-size: 0.7rem;
+            background: #f1f5f9;
+            border-radius: 6px;
+            padding: 0.1rem 0.4rem;
+            color: #475569;
+        }
+
+        .catch-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .catch-actions button {
+            flex: 1;
+            min-height: 40px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            background: white;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+
+        .catch-actions .share {
+            background: #2563eb;
+            color: white;
+            border-color: #2563eb;
+            font-weight: bold;
+        }
+
+        .species-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+        }
+
+        .species-chip {
+            border: 2px solid #e2e8f0;
+            background: white;
+            border-radius: 999px;
+            padding: 0.5rem 0.8rem;
+            font-size: 0.9rem;
+            cursor: pointer;
+            min-height: 40px;
+        }
+
+        .species-chip.selected {
+            background: #2563eb;
+            border-color: #2563eb;
+            color: white;
+            font-weight: bold;
+        }
+
+        .photo-pick {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px dashed #cbd5e1;
+            border-radius: 12px;
+            min-height: 70px;
+            color: #475569;
+            cursor: pointer;
+            overflow: hidden;
+        }
+
+        .photo-pick input {
+            display: none;
+        }
+
+        .photo-pick img {
+            width: 100%;
+            max-height: 220px;
+            object-fit: cover;
+        }
+
+        .toggle-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .toggle-row input {
+            width: 26px;
+            height: 26px;
+        }
+
+        .catch-marker {
+            width: 26px !important;
+            height: 26px !important;
+            background: #f59e0b !important;
+            border: 2px solid white !important;
+            border-radius: 50% !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
+            font-size: 14px;
+        }
+
         .custom-popup .leaflet-popup-content-wrapper {
             border-radius: 10px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.15);
@@ -1144,6 +1394,101 @@
                     </p>
                 </div>
             </section>
+            <!-- Catches Section -->
+            <section class="section" id="catches">
+                <div class="conditions-container">
+                    <button class="log-catch-btn" onclick="openCatchForm()">
+                        <i class="fas fa-fish"></i> Log a Catch
+                    </button>
+
+                    <div class="panel trophy-panel">
+                        <h3>🏆 Trophy Room</h3>
+                        <div class="stat-row" id="catchStats"></div>
+                        <div id="speciesChecklist"></div>
+                        <div id="personalBests"></div>
+                        <div id="badges"></div>
+                    </div>
+
+                    <div class="panel">
+                        <h3>🔍 Your Patterns</h3>
+                        <div id="catchPatterns"></div>
+                    </div>
+
+                    <h3 style="margin: 1.25rem 0 0.75rem; color: #1e293b;">📓 Catch Log</h3>
+                    <div id="catchList"></div>
+
+                    <div class="panel" style="margin-top: 1rem;">
+                        <h3>💾 Back Up Your Log</h3>
+                        <p class="panel-note" style="margin: 0 0 0.75rem;">Your catches and photos live only on this phone. Save a backup file now and then, so a new phone or a cleared browser doesn't lose them.</p>
+                        <div class="form-buttons" style="margin-top: 0;">
+                            <button class="btn-save" onclick="exportCatches()"><i class="fas fa-download"></i> Save Backup</button>
+                            <button class="btn-cancel" onclick="document.getElementById('importFile').click()"><i class="fas fa-upload"></i> Restore</button>
+                        </div>
+                        <input type="file" id="importFile" accept="application/json,.json" style="display: none;" onchange="importCatches(this.files[0]); this.value = '';">
+                    </div>
+                </div>
+            </section>
+
+            <!-- Log a Catch sheet -->
+            <div class="quick-add-form" id="catchForm">
+                <div class="quick-add-header">
+                    <h3 class="quick-add-title">🎣 Log a Catch</h3>
+                    <button class="close-btn" onclick="closeCatchForm()" aria-label="Close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <form onsubmit="saveCatch(event)">
+                    <div class="form-group">
+                        <label class="form-label">What did you catch?</label>
+                        <div class="species-chips" id="speciesChips"></div>
+                        <input type="text" id="catchSpeciesOther" class="form-input" placeholder="Other species..." style="display: none; margin-top: 0.5rem;">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="catchLength">Length (inches)</label>
+                            <input type="number" id="catchLength" class="form-input" inputmode="decimal" step="0.25" min="0" placeholder="e.g. 18.5">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="catchWeight">Weight (lbs)</label>
+                            <input type="number" id="catchWeight" class="form-input" inputmode="decimal" step="0.01" min="0" placeholder="e.g. 3.2">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="catchLure">Lure or bait</label>
+                        <input type="text" id="catchLure" class="form-input" list="lureList" placeholder="e.g. white spinnerbait, nightcrawler">
+                        <datalist id="lureList"></datalist>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Photo</label>
+                        <label class="photo-pick" id="photoPick">
+                            <input type="file" id="catchPhoto" accept="image/*" capture="environment" onchange="previewCatchPhoto(this.files[0])">
+                            <span id="photoPickText"><i class="fas fa-camera"></i> Take or choose a photo</span>
+                            <img id="photoPreview" alt="" style="display: none;">
+                        </label>
+                    </div>
+
+                    <div class="form-group toggle-row">
+                        <label class="form-label" style="margin: 0;" for="catchReleased">Released it?</label>
+                        <input type="checkbox" id="catchReleased" checked>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="catchNotes">Notes</label>
+                        <textarea id="catchNotes" class="form-textarea" placeholder="Depth, structure, retrieve speed..."></textarea>
+                    </div>
+
+                    <div class="panel-note" id="catchAutoNote" style="margin-bottom: 0.5rem;">📍 Location, time, weather, pressure and moon are saved automatically.</div>
+
+                    <div class="form-buttons">
+                        <button type="submit" class="btn-save" id="saveCatchBtn"><i class="fas fa-save"></i> Save Catch</button>
+                        <button type="button" class="btn-cancel" onclick="closeCatchForm()">Cancel</button>
+                    </div>
+                </form>
+            </div>
+
             <!-- My Lakes Section -->
             <section class="section" id="mylakes">
                 <div class="conditions-container">
@@ -1247,13 +1592,17 @@
                 <i class="fas fa-cloud-sun"></i>
                 <span>Conditions</span>
             </button>
+            <button class="nav-btn" data-section="catches">
+                <i class="fas fa-trophy"></i>
+                <span>Catches</span>
+            </button>
             <button class="nav-btn" data-section="chat">
                 <i class="fas fa-comments"></i>
                 <span>Ask</span>
             </button>
             <button class="nav-btn" data-section="mylakes">
                 <i class="fas fa-star"></i>
-                <span>My Spots</span>
+                <span>Spots</span>
             </button>
         </nav>
     </div>
@@ -3054,6 +3403,574 @@ Just ask me anything specific about your fishing plans!`
             }).join('');
         }
 
+        // Catch log: each catch saves its own weather, pressure, moon and place, so patterns emerge over time.
+        // Stored in IndexedDB on the phone (photos are too big for localStorage).
+        const SLAM_SPECIES = ['Largemouth Bass', 'Smallmouth Bass', 'Bluegill', 'Redear Sunfish', 'Crappie', 'Yellow Perch',
+            'Walleye', 'Channel Catfish', 'Flathead Catfish', 'Northern Pike', 'Muskie', 'White Bass',
+            'Hybrid Striped Bass', 'Trout', 'Steelhead', 'Salmon'];
+        const EXTRA_SPECIES = ['Carp', 'Other'];
+        let catches = [];
+        let selectedSpecies = null;
+        let catchPhotoBlob = null;
+        let catchObjectURLs = [];
+        let catchLayer = null;
+        let catchListLimit = 20;
+
+        function openCatchDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open('unclePD', 1);
+                request.onupgradeneeded = () => request.result.createObjectStore('catches', { keyPath: 'id' });
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        async function catchStore(mode, action) {
+            const db = await openCatchDB();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction('catches', mode);
+                const request = action(tx.objectStore('catches'));
+                tx.oncomplete = () => resolve(request && request.result);
+                tx.onerror = () => reject(tx.error);
+            });
+        }
+
+        async function loadCatches() {
+            try {
+                catches = (await catchStore('readonly', store => store.getAll())) || [];
+            } catch (error) {
+                console.log('Catch log unavailable:', error);
+                catches = [];
+            }
+            catches.sort((a, b) => new Date(b.time) - new Date(a.time));
+            renderCatches();
+        }
+
+        function catchSize(c) {
+            return [c.weight ? `${c.weight} lb` : null, c.length ? `${c.length}″` : null].filter(Boolean).join(', ');
+        }
+
+        // Personal bests rank by weight, then length
+        function catchRank(c) {
+            return (c.weight || 0) * 1000 + (c.length || 0);
+        }
+
+        // ---------- Logging a catch ----------
+        function openCatchForm() {
+            const counts = {};
+            catches.forEach(c => { counts[c.species] = (counts[c.species] || 0) + 1; });
+            const species = [...SLAM_SPECIES, ...EXTRA_SPECIES.slice(0, -1)]
+                .sort((a, b) => (counts[b] || 0) - (counts[a] || 0)).concat('Other');
+            document.getElementById('speciesChips').innerHTML = species.map(s =>
+                `<button type="button" class="species-chip" data-species="${escapeHTML(s)}" onclick="selectSpecies(this)">${escapeHTML(s)}</button>`).join('');
+            const lures = [...new Set(catches.map(c => c.lure).filter(Boolean))];
+            document.getElementById('lureList').innerHTML = lures.map(l => `<option value="${escapeHTML(l)}">`).join('');
+            selectedSpecies = null;
+            document.getElementById('catchForm').classList.add('show');
+        }
+
+        function closeCatchForm() {
+            document.getElementById('catchForm').classList.remove('show');
+            document.querySelector('#catchForm form').reset();
+            document.getElementById('catchSpeciesOther').style.display = 'none';
+            document.getElementById('photoPreview').style.display = 'none';
+            document.getElementById('photoPickText').style.display = '';
+            catchPhotoBlob = null;
+        }
+
+        function selectSpecies(chip) {
+            document.querySelectorAll('.species-chip').forEach(c => c.classList.remove('selected'));
+            chip.classList.add('selected');
+            selectedSpecies = chip.dataset.species;
+            const other = document.getElementById('catchSpeciesOther');
+            other.style.display = selectedSpecies === 'Other' ? 'block' : 'none';
+            if (selectedSpecies === 'Other') other.focus();
+        }
+
+        // Shrink phone photos (often 4-12 MB) to a sensible size before saving
+        function shrinkPhoto(file, maxSize = 1280) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                const url = URL.createObjectURL(file);
+                img.onload = () => {
+                    const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
+                    const canvas = document.createElement('canvas');
+                    canvas.width = Math.round(img.width * scale);
+                    canvas.height = Math.round(img.height * scale);
+                    canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+                    URL.revokeObjectURL(url);
+                    canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('Could not read photo')), 'image/jpeg', 0.8);
+                };
+                img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Could not read photo')); };
+                img.src = url;
+            });
+        }
+
+        async function previewCatchPhoto(file) {
+            if (!file) return;
+            try {
+                catchPhotoBlob = await shrinkPhoto(file);
+                const preview = document.getElementById('photoPreview');
+                preview.src = URL.createObjectURL(catchPhotoBlob);
+                preview.style.display = 'block';
+                document.getElementById('photoPickText').style.display = 'none';
+            } catch (error) {
+                alert(error.message);
+            }
+        }
+
+        function timeOfDay(time, coords) {
+            const noon = new Date(time);
+            noon.setHours(12, 0, 0, 0);
+            const sun = SunCalc.getTimes(noon, coords.lat, coords.lng);
+            const t = time.getTime();
+            const hour = 3600000;
+            if (Math.abs(t - sun.sunrise) <= hour) return 'Dawn';
+            if (Math.abs(t - sun.sunset) <= hour) return 'Dusk';
+            if (t < sun.sunrise - hour || t > sun.sunset.getTime() + hour) return 'Night';
+            const h = time.getHours();
+            return h < 11 ? 'Morning' : h < 14 ? 'Midday' : 'Afternoon';
+        }
+
+        // Weather, pressure, moon and solunar at the moment of the catch
+        async function catchConditions(coords, time) {
+            const where = coords || (conditionsState && conditionsState.data.coords) || { lat: 39.8, lng: -86.2 };
+            const moon = SunCalc.getMoonIllumination(time);
+            const periods = solunarPeriods(time, where);
+            const active = periods.find(p => time >= p.start && time <= p.end);
+            const snapshot = {
+                moon: moonPhaseName(moon.phase)[0],
+                moonIcon: moonPhaseName(moon.phase)[1],
+                moonPct: Math.round(moon.fraction * 100),
+                solunar: active ? active.label : null,
+                timeOfDay: timeOfDay(time, where)
+            };
+
+            let data = null;
+            const fresh = conditionsState && Date.now() - conditionsState.data.fetchedAt < 45 * 60000 &&
+                distanceMiles(where.lat, where.lng, conditionsState.data.coords.lat, conditionsState.data.coords.lng) < 20;
+            if (fresh) {
+                data = conditionsState.data;
+            } else {
+                try {
+                    data = { coords: where, weather: await fetchWeather(where), fetchedAt: Date.now() };
+                } catch (error) {
+                    console.log('No weather for this catch (offline?):', error);
+                }
+            }
+            if (data) {
+                const a = analyzeConditions(data, time);
+                const c = data.weather.current;
+                Object.assign(snapshot, {
+                    tempF: Math.round(c.temperature_2m),
+                    sky: weatherInfo(c.weather_code)[0],
+                    skyIcon: weatherInfo(c.weather_code)[1],
+                    windMph: Math.round(c.wind_speed_10m),
+                    windDir: compassPoint(c.wind_direction_10m),
+                    pressure: +a.pressureNow.toFixed(2),
+                    pressureTrend: a.pressure3hAgo == null ? null : Math.abs(a.pressureChange) < 0.02 ? 'Steady' : a.pressureChange < 0 ? 'Falling' : 'Rising',
+                    biteScore: a.score,
+                    waterTemp: a.waterEstimate != null ? Math.round(a.waterEstimate) : null
+                });
+            }
+            return snapshot;
+        }
+
+        function nearestWaterName(coords) {
+            if (!coords) return '';
+            const candidates = [
+                ...accessSites.map(s => ({ name: s.waterbody || s.site_name, lat: s.lat, lng: s.lng })),
+                ...Object.values(lakeData).map(l => ({ name: l.name, lat: l.coords.lat, lng: l.coords.lng })),
+                ...customLakes.map(l => ({ name: l.name, lat: l.coords.lat, lng: l.coords.lng }))
+            ].filter(c => c.name);
+            let best = null;
+            candidates.forEach(c => {
+                const d = distanceMiles(coords.lat, coords.lng, c.lat, c.lng);
+                if (d < 3 && (!best || d < best.d)) best = { name: c.name, d };
+            });
+            return best ? best.name : '';
+        }
+
+        async function saveCatch(event) {
+            event.preventDefault();
+            let species = selectedSpecies;
+            if (species === 'Other') species = document.getElementById('catchSpeciesOther').value.trim();
+            if (!species) {
+                alert('Tap the kind of fish first.');
+                return;
+            }
+            const button = document.getElementById('saveCatchBtn');
+            button.disabled = true;
+            button.textContent = 'Saving...';
+            try {
+                const time = new Date();
+                let coords = null;
+                try { coords = await getMyLocation(); } catch (e) { console.log('No GPS for this catch:', e); }
+                const record = {
+                    id: 'catch_' + time.getTime(),
+                    time: time.toISOString(),
+                    species,
+                    length: parseFloat(document.getElementById('catchLength').value) || null,
+                    weight: parseFloat(document.getElementById('catchWeight').value) || null,
+                    lure: document.getElementById('catchLure').value.trim(),
+                    released: document.getElementById('catchReleased').checked,
+                    notes: document.getElementById('catchNotes').value.trim(),
+                    coords,
+                    water: nearestWaterName(coords),
+                    photo: catchPhotoBlob,
+                    conditions: await catchConditions(coords, time)
+                };
+                const previousBest = catches.filter(c => c.species === species).reduce((best, c) => Math.max(best, catchRank(c)), 0);
+                await catchStore('readwrite', store => store.put(record));
+                catches.unshift(record);
+                closeCatchForm();
+                renderCatches();
+                switchSection('catches');
+                const isPB = catchRank(record) > 0 && catchRank(record) > previousBest && previousBest > 0;
+                const isFirst = !catches.slice(1).some(c => c.species === species);
+                celebrate(isPB ? `🏆 New personal best ${species}!` : isFirst ? `🎉 First ${species} in the log!` : `🎣 ${species} logged!`);
+            } catch (error) {
+                alert('Could not save that catch: ' + error.message);
+            } finally {
+                button.disabled = false;
+                button.innerHTML = '<i class="fas fa-save"></i> Save Catch';
+            }
+        }
+
+        function celebrate(text) {
+            const toast = document.createElement('div');
+            toast.className = 'map-hint show';
+            toast.style.cssText = 'position: fixed; top: calc(70px + env(safe-area-inset-top)); left: 16px; right: 16px; font-size: 1.1rem; text-align: center; z-index: 3000; background: #059669;';
+            toast.textContent = text;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3500);
+        }
+
+        async function deleteCatch(id) {
+            if (!confirm('Delete this catch from your log?')) return;
+            await catchStore('readwrite', store => store.delete(id));
+            catches = catches.filter(c => c.id !== id);
+            renderCatches();
+        }
+
+        function viewCatchOnMap(id) {
+            const c = catches.find(x => x.id === id);
+            if (!c || !c.coords || !map) return;
+            switchSection('map');
+            map.setView([c.coords.lat, c.coords.lng], 15);
+            const marker = catchLayer && catchLayer.getLayers().find(m => m.catchId === id);
+            if (marker) marker.openPopup();
+        }
+
+        // ---------- Trophy room, patterns and the list ----------
+        function slamName(species) {
+            const s = species.toLowerCase();
+            if (s.includes('crappie')) return 'Crappie';
+            if (s.includes('trout') && !s.includes('steelhead')) return 'Trout';
+            if (s.includes('salmon') || s.includes('coho') || s.includes('chinook')) return 'Salmon';
+            if (s.includes('musk')) return 'Muskie';
+            if (s.includes('shellcracker')) return 'Redear Sunfish';
+            return SLAM_SPECIES.find(x => x.toLowerCase() === s) || species;
+        }
+
+        const BADGES = [
+            { icon: '🎣', name: 'First Fish', test: c => c.length >= 1 },
+            { icon: '🔟', name: 'Ten Spot', test: c => c.length >= 10 },
+            { icon: '🏅', name: '50 Club', test: c => c.length >= 50 },
+            { icon: '🌈', name: '5 Species', test: c => new Set(c.map(x => slamName(x.species))).size >= 5 },
+            { icon: '👑', name: '10 Species', test: c => new Set(c.map(x => slamName(x.species))).size >= 10 },
+            { icon: '🐷', name: 'Lunker Bass', test: c => c.some(x => /bass/i.test(x.species) && x.weight >= 5) },
+            { icon: '🌅', name: 'Early Bird', test: c => c.some(x => x.conditions && x.conditions.timeOfDay === 'Dawn') },
+            { icon: '🦉', name: 'Night Owl', test: c => c.some(x => x.conditions && x.conditions.timeOfDay === 'Night') },
+            { icon: '🌕', name: 'Solunar Believer', test: c => c.filter(x => x.conditions && x.conditions.solunar).length >= 5 },
+            { icon: '🤝', name: 'Good Steward', test: c => c.filter(x => x.released).length >= 10 },
+            { icon: '🗺️', name: 'Explorer', test: c => new Set(c.map(x => x.water).filter(Boolean)).size >= 5 },
+            { icon: '🎯', name: 'Slam', test: c => SLAM_SPECIES.every(s => c.some(x => slamName(x.species) === s)) }
+        ];
+
+        function topBucket(list, key) {
+            const counts = {};
+            list.forEach(c => {
+                const value = key(c);
+                if (value) counts[value] = (counts[value] || 0) + 1;
+            });
+            const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+            const total = entries.reduce((sum, e) => sum + e[1], 0);
+            return entries.length ? { value: entries[0][0], count: entries[0][1], pct: Math.round(entries[0][1] / total * 100), total } : null;
+        }
+
+        function windBucket(mph) {
+            if (mph == null) return null;
+            return mph < 4 ? 'Calm (under 4 mph)' : mph <= 10 ? 'Light (4–10 mph)' : mph <= 15 ? 'Breezy (11–15 mph)' : 'Windy (over 15 mph)';
+        }
+
+        function skyBucket(sky) {
+            if (!sky) return null;
+            if (/clear/i.test(sky)) return 'Clear skies';
+            if (/cloud|overcast|fog/i.test(sky)) return 'Clouds';
+            return 'Rain or snow';
+        }
+
+        function renderPatterns() {
+            const withConditions = catches.filter(c => c.conditions);
+            const el = document.getElementById('catchPatterns');
+            if (withConditions.length < 5) {
+                el.innerHTML = `<p class="panel-note" style="margin: 0;">Log ${5 - withConditions.length} more catch${5 - withConditions.length === 1 ? '' : 'es'} to unlock your patterns. Every catch saves the pressure, wind, moon and time automatically.</p>`;
+                return;
+            }
+            const rows = [
+                ['📊 Pressure', topBucket(withConditions, c => c.conditions.pressureTrend && c.conditions.pressureTrend + ' pressure')],
+                ['🕐 Time of day', topBucket(withConditions, c => c.conditions.timeOfDay)],
+                ['🌬️ Wind', topBucket(withConditions, c => windBucket(c.conditions.windMph))],
+                ['☁️ Sky', topBucket(withConditions, c => skyBucket(c.conditions.sky))],
+                ['🌙 Moon', topBucket(withConditions, c => c.conditions.moon)],
+                ['🕰️ Solunar', topBucket(withConditions, c => c.conditions.solunar ? 'During a solunar period' : 'Outside solunar periods')],
+                ['🎣 Lure', topBucket(catches, c => c.lure)],
+                ['📍 Water', topBucket(catches, c => c.water)]
+            ].filter(r => r[1]);
+            const bySpecies = topBucket(catches, c => c.species);
+            const speciesLure = bySpecies ? topBucket(catches.filter(c => c.species === bySpecies.value), c => c.lure) : null;
+            el.innerHTML = rows.map(([label, b]) =>
+                `<div class="pattern-row"><span>${label}</span><span><strong>${escapeHTML(b.value)}</strong> · ${b.pct}%</span></div>`).join('') +
+                (speciesLure ? `<div class="pattern-row"><span>🐟 ${escapeHTML(bySpecies.value)} lure</span><span><strong>${escapeHTML(speciesLure.value)}</strong> · ${speciesLure.pct}%</span></div>` : '') +
+                `<p class="panel-note">These count when you caught fish, not when you fished, so they also reflect when you like to go out. They get sharper with every catch.</p>`;
+        }
+
+        function renderTrophyRoom() {
+            const year = new Date().getFullYear();
+            const speciesCaught = new Set(catches.map(c => slamName(c.species)));
+            document.getElementById('catchStats').innerHTML = `
+                <div class="stat-box"><strong>${catches.length}</strong><span>Catches</span></div>
+                <div class="stat-box"><strong>${speciesCaught.size}</strong><span>Species</span></div>
+                <div class="stat-box"><strong>${catches.filter(c => new Date(c.time).getFullYear() === year).length}</strong><span>In ${year}</span></div>`;
+
+            const slamCount = SLAM_SPECIES.filter(s => speciesCaught.has(s)).length;
+            document.getElementById('speciesChecklist').innerHTML = `
+                <div class="section-label">Indiana Slam: ${slamCount} of ${SLAM_SPECIES.length}</div>
+                <div class="checklist">${SLAM_SPECIES.map(s => `<span class="check-chip${speciesCaught.has(s) ? ' got' : ''}">${speciesCaught.has(s) ? '✓ ' : ''}${s}</span>`).join('')}</div>`;
+
+            const bests = {};
+            catches.forEach(c => {
+                if (catchRank(c) > 0 && (!bests[c.species] || catchRank(c) > catchRank(bests[c.species]))) bests[c.species] = c;
+            });
+            const bestList = Object.values(bests).sort((a, b) => catchRank(b) - catchRank(a));
+            document.getElementById('personalBests').innerHTML = bestList.length ? `
+                <div class="section-label">Personal Bests</div>
+                ${bestList.map(c => `<div class="pb-row"><span>${escapeHTML(c.species)}</span><span><strong>${catchSize(c)}</strong>${c.water ? ' · ' + escapeHTML(c.water) : ''}</span></div>`).join('')}` : '';
+
+            document.getElementById('badges').innerHTML = `
+                <div class="section-label" style="margin-top: 1rem;">Badges</div>
+                <div class="badge-grid">${BADGES.map(b => `<div class="badge${b.test(catches) ? ' earned' : ''}"><span class="badge-icon">${b.icon}</span>${b.name}</div>`).join('')}</div>`;
+        }
+
+        function catchChips(c) {
+            const k = c.conditions || {};
+            return [
+                k.pressureTrend ? `📊 ${k.pressureTrend}` : null,
+                k.windMph != null ? `🌬️ ${k.windMph} ${k.windDir}` : null,
+                k.tempF != null ? `${k.skyIcon || '🌡️'} ${k.tempF}°` : null,
+                k.moon ? `${k.moonIcon} ${k.moon}` : null,
+                k.solunar ? `🕰️ ${k.solunar.replace(/^(Major|Minor): /, '')}` : null,
+                k.timeOfDay ? `🕐 ${k.timeOfDay}` : null,
+                c.lure ? `🎣 ${c.lure}` : null
+            ].filter(Boolean).map(t => `<span class="cond-chip">${escapeHTML(t)}</span>`).join('');
+        }
+
+        function renderCatchList() {
+            catchObjectURLs.forEach(url => URL.revokeObjectURL(url));
+            catchObjectURLs = [];
+            const list = document.getElementById('catchList');
+            if (!catches.length) {
+                list.innerHTML = `<div style="text-align: center; padding: 1.5rem; color: #64748b;">No catches yet. Tap <strong>Log a Catch</strong> the next time one hits the boat!</div>`;
+                return;
+            }
+            list.innerHTML = catches.slice(0, catchListLimit).map(c => {
+                let thumb = '<div class="catch-thumb">🐟</div>';
+                if (c.photo) {
+                    const url = URL.createObjectURL(c.photo);
+                    catchObjectURLs.push(url);
+                    thumb = `<img class="catch-thumb" src="${url}" alt="${escapeHTML(c.species)}">`;
+                }
+                const when = new Date(c.time).toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+                return `<div class="catch-card">
+                    ${thumb}
+                    <div class="catch-body">
+                        <div class="catch-title">${escapeHTML(c.species)}${catchSize(c) ? ' · ' + catchSize(c) : ''}</div>
+                        <div class="catch-meta">${c.water ? escapeHTML(c.water) + ' · ' : ''}${when}${c.released ? ' · Released' : ''}</div>
+                        <div class="cond-chips">${catchChips(c)}</div>
+                        ${c.notes ? `<div class="catch-meta" style="margin-top: 0.35rem;">${escapeHTML(c.notes)}</div>` : ''}
+                        <div class="catch-actions">
+                            <button class="share" onclick="shareCatch('${c.id}')"><i class="fas fa-share-alt"></i> Send</button>
+                            ${c.coords ? `<button onclick="viewCatchOnMap('${c.id}')"><i class="fas fa-map-marker-alt"></i> Map</button>` : ''}
+                            <button onclick="deleteCatch('${c.id}')" aria-label="Delete"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('') + (catches.length > catchListLimit ? `<button class="btn-cancel" style="width: 100%;" onclick="catchListLimit += 20; renderCatchList();">Show more</button>` : '');
+        }
+
+        function renderCatchMarkers() {
+            if (!map) return;
+            if (catchLayer) map.removeLayer(catchLayer);
+            catchLayer = L.layerGroup(catches.filter(c => c.coords).map(c => {
+                const marker = L.marker([c.coords.lat, c.coords.lng], {
+                    icon: L.divIcon({ className: 'catch-marker', html: '🐟', iconSize: [26, 26], iconAnchor: [13, 13], popupAnchor: [0, -13] }),
+                    title: c.species
+                });
+                marker.catchId = c.id;
+                marker.bindPopup(`<strong>${escapeHTML(c.species)}</strong>${catchSize(c) ? ' · ' + catchSize(c) : ''}<br>
+                    <span style="color: #64748b; font-size: 12px;">${new Date(c.time).toLocaleDateString()}${c.lure ? ' · ' + escapeHTML(c.lure) : ''}</span>
+                    <div class="cond-chips" style="margin-top: 6px;">${catchChips(c)}</div>`, { maxWidth: 260 });
+                return marker;
+            })).addTo(map);
+        }
+
+        function renderCatches() {
+            renderTrophyRoom();
+            renderPatterns();
+            renderCatchList();
+            renderCatchMarkers();
+        }
+
+        // ---------- Sharing: a brag card picture for the family ----------
+        function loadImage(blob) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => resolve(img);
+                img.onerror = reject;
+                img.src = URL.createObjectURL(blob);
+            });
+        }
+
+        async function makeBragCard(c) {
+            const W = 1080, H = 1350, photoH = 1000;
+            const canvas = document.createElement('canvas');
+            canvas.width = W;
+            canvas.height = H;
+            const ctx = canvas.getContext('2d');
+            const sky = ctx.createLinearGradient(0, 0, W, photoH);
+            sky.addColorStop(0, '#667eea');
+            sky.addColorStop(1, '#764ba2');
+            ctx.fillStyle = sky;
+            ctx.fillRect(0, 0, W, photoH);
+            if (c.photo) {
+                const img = await loadImage(c.photo);
+                const scale = Math.max(W / img.width, photoH / img.height);
+                ctx.drawImage(img, (W - img.width * scale) / 2, (photoH - img.height * scale) / 2, img.width * scale, img.height * scale);
+            } else {
+                ctx.font = '400px serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('🐟', W / 2, photoH / 2);
+            }
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(0, photoH, W, H - photoH);
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'alphabetic';
+            ctx.fillStyle = '#fde047';
+            ctx.font = 'bold 72px -apple-system, Segoe UI, Roboto, sans-serif';
+            ctx.fillText(c.species, 50, photoH + 85);
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 52px -apple-system, Segoe UI, Roboto, sans-serif';
+            ctx.fillText([catchSize(c), c.water].filter(Boolean).join('  ·  ') || 'Another one for the log', 50, photoH + 155);
+            const k = c.conditions || {};
+            ctx.fillStyle = '#cbd5e1';
+            ctx.font = '38px -apple-system, Segoe UI, Roboto, sans-serif';
+            const detail = [new Date(c.time).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }),
+                k.pressureTrend ? k.pressureTrend + ' pressure' : null, k.moon, c.lure].filter(Boolean).join('  ·  ');
+            // Wrap the details onto at most two lines
+            const lines = [''];
+            detail.split('  ·  ').forEach(part => {
+                const next = lines[lines.length - 1] ? lines[lines.length - 1] + '  ·  ' + part : part;
+                if (ctx.measureText(next).width > W - 100 && lines[lines.length - 1]) lines.push(part);
+                else lines[lines.length - 1] = next;
+            });
+            lines.slice(0, 2).forEach((line, i) => ctx.fillText(line, 50, photoH + 215 + i * 48));
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = 'italic 34px -apple-system, Segoe UI, Roboto, sans-serif';
+            ctx.fillText("Uncle PD's Fishing Partner", 50, H - 22);
+            return new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.88));
+        }
+
+        async function shareCatch(id) {
+            const c = catches.find(x => x.id === id);
+            if (!c) return;
+            const k = c.conditions || {};
+            const text = `🎣 Uncle PD caught a${catchSize(c) ? ' ' + catchSize(c) : ''} ${c.species}${c.water ? ' at ' + c.water : ''}!` +
+                `${c.lure ? ' Lure: ' + c.lure + '.' : ''}${k.pressureTrend ? ' Pressure ' + k.pressureTrend.toLowerCase() + '.' : ''}${k.moon ? ' ' + k.moonIcon + ' ' + k.moon + '.' : ''}${c.released ? ' Released to fight again.' : ''}`;
+            try {
+                const card = await makeBragCard(c);
+                const file = new File([card], `${c.species.replace(/\W+/g, '-')}.jpg`, { type: 'image/jpeg' });
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    await navigator.share({ files: [file], text });
+                    return;
+                }
+                if (navigator.share) {
+                    await navigator.share({ text });
+                    return;
+                }
+                // No share sheet (desktop): save the card and open a text message
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(card);
+                a.download = file.name;
+                a.click();
+                window.location.href = 'sms:?&body=' + encodeURIComponent(text);
+            } catch (error) {
+                if (error.name !== 'AbortError') console.log('Share failed:', error);
+            }
+        }
+
+        // ---------- Backup ----------
+        function blobToDataURL(blob) {
+            return new Promise(resolve => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.readAsDataURL(blob);
+            });
+        }
+
+        async function exportCatches() {
+            const records = await Promise.all(catches.map(async c => ({ ...c, photo: c.photo ? await blobToDataURL(c.photo) : null })));
+            const backup = { app: 'uncle-pd-fishing', version: 1, exportedAt: new Date().toISOString(), catches: records, spots: customLakes };
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(new Blob([JSON.stringify(backup)], { type: 'application/json' }));
+            a.download = `uncle-pd-fishing-backup-${new Date().toISOString().slice(0, 10)}.json`;
+            a.click();
+        }
+
+        async function importCatches(file) {
+            if (!file) return;
+            try {
+                const backup = JSON.parse(await file.text());
+                if (backup.app !== 'uncle-pd-fishing') throw new Error("That file isn't a fishing log backup");
+                let added = 0;
+                for (const c of backup.catches || []) {
+                    if (catches.some(x => x.id === c.id)) continue;
+                    const record = { ...c, photo: c.photo ? await (await fetch(c.photo)).blob() : null };
+                    await catchStore('readwrite', store => store.put(record));
+                    catches.push(record);
+                    added++;
+                }
+                let spotsAdded = 0;
+                (backup.spots || []).forEach(spot => {
+                    if (customLakes.some(l => l.id === spot.id)) return;
+                    customLakes.push(spot);
+                    addCustomLakeMarker(spot);
+                    spotsAdded++;
+                });
+                if (spotsAdded) {
+                    saveCustomLakes();
+                    displayCustomLakes();
+                    populateConditionsLocations();
+                }
+                catches.sort((a, b) => new Date(b.time) - new Date(a.time));
+                renderCatches();
+                alert(`Restored ${added} catch${added === 1 ? '' : 'es'} and ${spotsAdded} spot${spotsAdded === 1 ? '' : 's'}.`);
+            } catch (error) {
+                alert('Could not restore: ' + error.message);
+            }
+        }
+
         // Plain-English summary for the chat assistant
         function conditionsSummary() {
             if (!conditionsState) return null;
@@ -3099,6 +4016,9 @@ ${a.reasons.map(escapeHTML).join('<br>')}`;
             // Live conditions
             populateConditionsLocations();
             refreshConditions(false);
+
+            // Catch log and trophy room
+            loadCatches();
         });
 
         // Sunlight mode: high contrast for reading the screen on the water

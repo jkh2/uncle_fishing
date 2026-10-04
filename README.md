@@ -52,7 +52,17 @@ Estimated water temp for inland lakes (NOAA link for Lake Michigan)
 Refreshes every 15 minutes; shows the last reading if you lose signal
 Tap "Conditions" in any map pin to jump straight there
 
-4. Your Secret Spots ⭐
+4. Catches and Trophy Room 🏆
+
+Tap "Log a Catch": pick the fish, add size, lure and a photo
+The app saves where you were, the time, weather, wind, barometric pressure trend, moon and solunar period automatically
+Trophy Room: total catches, personal bests for every species, badges, and the Indiana Slam (16 species to collect)
+Your Patterns: after 5 catches, see what conditions, times, lures and waters you catch the most fish in
+Send: turns any catch into a picture card with the photo and stats, ready to text to family
+Gold fish markers show your catches on the map
+Save Backup / Restore keeps your log safe when you change phones
+
+5. Your Secret Spots ⭐
 
 Add your own lakes that only you can see
 GPS coordinates automatically filled in
