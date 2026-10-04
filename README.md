@@ -35,11 +35,11 @@ View all lakes with the fish button
 
 2. AI Fishing Assistant 🤖
 
-Ask questions about local fishing conditions
-Get advice on what's biting today
-Learn regulations and licensing requirements
-Quick buttons for common questions
-Voice input - speak your questions!
+Powered by Google Gemini (free), and it can see today's conditions, the forecast, nearby DNR access sites, and your catch log
+Ask anything: "Where should I go Saturday morning?" or "Why did the bite die this afternoon?"
+Quick buttons: Game Plan, What's Biting, Tie On, Best Day, My Patterns, Near Me
+Voice input - tap the microphone and talk; tap 🔊 to hear an answer read aloud
+With no signal it still answers from what the phone knows (conditions, regulations pointer)
 
 3. Live Conditions 🌤️
 
@@ -187,3 +187,12 @@ This app was made with love for your fishing adventures. Every feature was desig
 Tight lines and good luck out there! 🐟
 
 Built with ❤️ for Uncle PD's fishing adventures
+
+
+🔧 For James: Turning On the AI (one time)
+
+1. Get a free Gemini key at https://aistudio.google.com/apikey (Create API key).
+2. Go to https://vercel.com/new, import the jkh2/uncle_fishing repository, and before deploying add an Environment Variable named GEMINI_API_KEY with that key. Deploy.
+3. The app and its assistant then live at the Vercel address (for example https://uncle-fishing.vercel.app). The GitHub Pages copy calls that same address; if Vercel picked a different name, update AI_REMOTE_ENDPOINT in index.html.
+
+The key stays on Vercel's server (api/chat.js) and never ships to the phone. Free-tier questions may be used by Google to improve its models, so the app sends secret spot names but never their coordinates.
