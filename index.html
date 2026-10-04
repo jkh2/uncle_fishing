@@ -2,8 +2,16 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NW Indiana Fishing Companion</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Uncle PD's Fishing Partner</title>
+    <meta name="theme-color" content="#2563eb">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="PD Fishing">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="apple-touch-icon" href="icons/icon-180.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -17,22 +25,128 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 16px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             height: 100vh;
+            height: 100dvh;
             overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .app-container {
             height: 100vh;
+            height: 100dvh;
             display: flex;
             flex-direction: column;
             position: relative;
         }
 
+        /* Bottom tab bar: thumbs live at the bottom of a phone */
+        .tab-bar {
+            display: flex;
+            background: white;
+            border-top: 1px solid #e2e8f0;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.08);
+            padding-bottom: env(safe-area-inset-bottom);
+            z-index: 1000;
+        }
+
+        .tab-bar .nav-btn {
+            flex: 1;
+            border: none;
+            border-radius: 0;
+            background: none;
+            color: #64748b;
+            padding: 0.5rem 0 0.4rem;
+            min-height: 60px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.25rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .tab-bar .nav-btn svg, .tab-bar .nav-btn i {
+            font-size: 1.35rem;
+        }
+
+        .tab-bar .nav-btn.active, .tab-bar .nav-btn:hover {
+            background: none;
+            color: #2563eb;
+        }
+
+        .tab-bar .nav-btn.active {
+            box-shadow: inset 0 3px 0 #2563eb;
+        }
+
+        .header-btn {
+            background: none;
+            border: 2px solid #2563eb;
+            color: #2563eb;
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        /* Sunlight mode: high contrast for reading on the water */
+        body.sunlight {
+            background: #000;
+        }
+
+        body.sunlight .header, body.sunlight .tab-bar {
+            background: #fff;
+        }
+
+        body.sunlight .header, body.sunlight .logo, body.sunlight .tab-bar .nav-btn {
+            color: #000;
+        }
+
+        body.sunlight .tab-bar .nav-btn.active {
+            color: #000;
+            background: #fde047;
+            box-shadow: inset 0 4px 0 #000;
+        }
+
+        body.sunlight .condition-card {
+            background: #000;
+            border: 3px solid #fde047;
+        }
+
+        body.sunlight .condition-value {
+            color: #fde047;
+        }
+
+        body.sunlight .message.ai, body.sunlight .score-card, body.sunlight .time-slot {
+            background: #fff;
+            color: #000;
+            border: 2px solid #000;
+        }
+
+        body.sunlight .score-reasons, body.sunlight .panel-note, body.sunlight .cond-updated {
+            color: #000;
+        }
+
+        body.sunlight .message.user {
+            background: #000;
+        }
+
+        body.sunlight .header-btn {
+            border-color: #000;
+            color: #000;
+            background: #fde047;
+        }
+
         .header {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
-            padding: 1rem;
+            padding: 0.5rem 1rem;
+            padding-top: calc(0.5rem + env(safe-area-inset-top));
+            gap: 0.75rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -42,9 +156,10 @@
 
         .logo {
             display: flex;
-            flex-direction: column;
+            flex-direction: row;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.6rem;
+            font-size: 1.1rem;
             font-weight: bold;
             color: #2563eb;
         }
@@ -56,8 +171,8 @@
         }
 
         .uncle-pd-avatar {
-            width: 50px;
-            height: 50px;
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
             border: 3px solid #2563eb;
             object-fit: cover;
@@ -103,6 +218,11 @@
             transition: all 0.3s ease;
         }
 
+        .section:not(.active) {
+            visibility: hidden;
+            pointer-events: none;
+        }
+
         .section.active {
             opacity: 1;
             transform: translateX(0);
@@ -115,7 +235,7 @@
             position: relative;
         }
 
-        #map {
+        #mapCanvas {
             width: 100%;
             height: 100%;
         }
@@ -160,17 +280,18 @@
             z-index: 1000;
             display: flex;
             flex-direction: column;
-            gap: 5px;
+            gap: 8px;
         }
 
         .map-control-btn {
             background: white;
             border: none;
-            border-radius: 5px;
-            padding: 8px;
+            border-radius: 8px;
+            width: 44px;
+            height: 44px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
             cursor: pointer;
-            font-size: 14px;
+            font-size: 18px;
             color: #333;
         }
 
@@ -277,7 +398,7 @@
 
         .quick-add-form {
             position: fixed;
-            bottom: -400px;
+            bottom: -100vh;
             left: 0;
             right: 0;
             background: white;
@@ -286,7 +407,8 @@
             box-shadow: 0 -5px 20px rgba(0,0,0,0.2);
             transition: bottom 0.3s ease;
             z-index: 1002;
-            max-height: 70vh;
+            max-height: 85vh;
+            padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
             overflow-y: auto;
         }
 
@@ -329,10 +451,10 @@
 
         .form-input {
             width: 100%;
-            padding: 0.5rem;
+            padding: 0.6rem;
             border: 2px solid #e2e8f0;
-            border-radius: 5px;
-            font-size: 0.9rem;
+            border-radius: 8px;
+            font-size: 1rem;
         }
 
         .form-input:focus {
@@ -347,7 +469,7 @@
             border-radius: 5px;
             min-height: 60px;
             resize: vertical;
-            font-size: 0.9rem;
+            font-size: 1rem;
         }
 
         .form-buttons {
@@ -387,7 +509,7 @@
 
         .lake-info {
             position: fixed;
-            bottom: -300px;
+            bottom: -100vh;
             left: 0;
             right: 0;
             background: white;
@@ -480,8 +602,9 @@
         }
 
         .send-btn, .voice-btn {
-            width: 40px;
-            height: 40px;
+            width: 44px;
+            height: 44px;
+            flex-shrink: 0;
             border: none;
             border-radius: 50%;
             background: #2563eb;
@@ -553,12 +676,12 @@
             border: 2px solid #2563eb;
             color: #2563eb;
             border-radius: 50%;
-            width: 36px;
-            height: 36px;
+            width: 44px;
+            height: 44px;
             cursor: pointer;
         }
 
-        .cond-refresh.spinning i {
+        .cond-refresh.spinning svg, .cond-refresh.spinning i {
             animation: spin 1s linear infinite;
         }
 
@@ -680,9 +803,9 @@
         /* Quick Actions */
         .quick-actions {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: repeat(3, 1fr);
             gap: 0.5rem;
-            margin-bottom: 1rem;
+            padding: 0.75rem 0.75rem 0;
         }
 
         .quick-action {
@@ -761,34 +884,22 @@
     <div class="app-container">
         <header class="header">
             <div class="logo">
+                <img src="icons/avatar-160.jpg" alt="Uncle PD" class="uncle-pd-avatar" onerror="this.style.display='none'">
                 <div class="logo-text">
-                    <i class="fas fa-fish"></i>
-                    <span>Uncle PD's AI Fishing Partner</span>
+                    <span>Uncle PD's Fishing Partner</span>
                 </div>
-                <img src="unclepd.jpg" alt="Uncle PD" class="uncle-pd-avatar" onerror="this.style.display='none'">
             </div>
-            <div class="nav-buttons">
-                <button class="nav-btn active" data-section="map">
-                    <i class="fas fa-map"></i>
-                </button>
-                <button class="nav-btn" data-section="chat">
-                    <i class="fas fa-comments"></i>
-                </button>
-                <button class="nav-btn" data-section="conditions">
-                    <i class="fas fa-cloud-sun"></i>
-                </button>
-                <button class="nav-btn" data-section="mylakes">
-                    <i class="fas fa-plus-circle"></i>
-                </button>
-            </div>
+            <button class="header-btn" id="sunlightBtn" onclick="toggleSunlightMode()" title="Sunlight mode (high contrast)">
+                <i class="fas fa-sun"></i>
+            </button>
         </header>
 
         <main class="main-content">
             <!-- Map Section -->
             <section class="section active" id="map">
                 <div class="map-container">
-                    <div id="map" class="map-loading">
-                        <h2 style="margin-bottom: 1rem;">Loading Northwest Indiana Lakes...</h2>
+                    <div id="mapCanvas" class="map-loading">
+                        <h2 style="margin-bottom: 1rem;">Loading Indiana Lakes...</h2>
                         <p style="margin-bottom: 2rem; opacity: 0.9;">Interactive map loading...</p>
                         <div style="width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.3); border-top: 4px solid white; border-radius: 50%; animation: spin 1s linear infinite;"></div>
                     </div>
@@ -894,7 +1005,7 @@
                     <div class="chat-messages" id="chatMessages">
                         <div class="message ai fade-in">
                             <strong>🎣 Uncle PD's AI Fishing Assistant</strong><br><br>
-                            Welcome back, Uncle PD! I'm your personal fishing companion for Northwest Indiana. I can help you with:
+                            Welcome back, Uncle PD! I'm your personal fishing companion for Indiana waters. I can help you with:
                             <br>• Local fishing conditions and forecasts
                             <br>• Lake information and hotspots
                             <br>• Fish species and techniques
@@ -1086,10 +1197,29 @@
                 </div>
             </section>
         </main>
+
+        <nav class="tab-bar">
+            <button class="nav-btn active" data-section="map">
+                <i class="fas fa-map"></i>
+                <span>Map</span>
+            </button>
+            <button class="nav-btn" data-section="conditions">
+                <i class="fas fa-cloud-sun"></i>
+                <span>Conditions</span>
+            </button>
+            <button class="nav-btn" data-section="chat">
+                <i class="fas fa-comments"></i>
+                <span>Ask</span>
+            </button>
+            <button class="nav-btn" data-section="mylakes">
+                <i class="fas fa-star"></i>
+                <span>My Spots</span>
+            </button>
+        </nav>
     </div>
 
     <script>
-        // Enhanced lake data with many more Northwest Indiana fishing destinations
+        // Hand-picked Indiana lakes
         const lakeData = {
             'lake-michigan': {
                 name: 'Lake Michigan',
@@ -1651,13 +1781,24 @@
         let markers = [];
 
         function initMap() {
-            // Center on Northwest Indiana
-            const nwIndiana = [41.4500, -87.0000];
+            // Open where he left off, or on the whole state the first time
+            let savedView = null;
+            try { savedView = JSON.parse(localStorage.getItem('unclePDMapView')); } catch (e) {}
             
-            map = L.map('map', {
-                center: nwIndiana,
-                zoom: 9,
+            // Clear the loading placeholder so it can't show through gaps in the tiles
+            const mapEl = document.getElementById('mapCanvas');
+            mapEl.innerHTML = '';
+            mapEl.classList.remove('map-loading');
+
+            map = L.map('mapCanvas', {
+                center: savedView ? savedView.center : [39.8, -86.2],
+                zoom: savedView ? savedView.zoom : 7,
                 zoomControl: false
+            });
+
+            map.on('moveend', () => {
+                const c = map.getCenter();
+                localStorage.setItem('unclePDMapView', JSON.stringify({ center: [c.lat, c.lng], zoom: map.getZoom() }));
             });
 
             // Add zoom control to bottom right
@@ -1683,10 +1824,10 @@
             map.streetLayer = streetLayer;
             map.satelliteLayer = satelliteLayer;
             
-            // Set map bounds to Northwest Indiana region (200-mile radius)
+            // Keep the map around Indiana, with room for Lake Michigan and border waters
             const bounds = L.latLngBounds(
-                [40.0, -89.0], // Southwest
-                [43.0, -84.5]  // Northeast
+                [37.0, -89.5], // Southwest
+                [42.6, -84.0]  // Northeast
             );
             map.setMaxBounds(bounds);
             
@@ -2243,8 +2384,8 @@ Just ask me anything specific about your fishing plans!`
                 recognition.interimResults = false;
                 recognition.lang = 'en-US';
                 
+                // Font Awesome swaps <i> for <svg>, so color the button instead of changing the icon
                 recognition.onstart = function() {
-                    document.querySelector('.voice-btn i').className = 'fas fa-circle';
                     document.querySelector('.voice-btn').style.background = '#ef4444';
                 };
                 
@@ -2254,8 +2395,8 @@ Just ask me anything specific about your fishing plans!`
                 };
                 
                 recognition.onend = function() {
-                    document.querySelector('.voice-btn i').className = 'fas fa-microphone';
                     document.querySelector('.voice-btn').style.background = '#2563eb';
+                    if (document.getElementById('chatInput').value.trim()) sendMessage();
                 };
                 
                 recognition.start();
@@ -2631,8 +2772,15 @@ ${a.reasons.map(escapeHTML).join('<br>')}`;
                 document.querySelector('.app-container').style.opacity = '1';
             }, 100);
             
-            // Load OpenStreetMap
-            loadGoogleMaps();
+            // Load OpenStreetMap (if the map library didn't load, keep the rest of the app working)
+            try {
+                loadGoogleMaps();
+            } catch (error) {
+                console.log('Map unavailable:', error);
+                const mapEl = document.getElementById('mapCanvas');
+                mapEl.classList.add('map-loading');
+                mapEl.innerHTML = '<h2>Map needs a signal the first time</h2><p style="opacity: 0.9;">Conditions and your spots still work.</p>';
+            }
             
             // Load Uncle PD's custom lakes
             loadCustomLakes();
@@ -2642,32 +2790,59 @@ ${a.reasons.map(escapeHTML).join('<br>')}`;
             refreshConditions(false);
         });
 
-        // Offline support (would be implemented with actual service worker file in production)
-        // Service worker registration removed for demo - would be added in production deployment
+        // Sunlight mode: high contrast for reading the screen on the water
+        function toggleSunlightMode() {
+            const on = document.body.classList.toggle('sunlight');
+            localStorage.setItem('unclePDSunlight', on ? '1' : '');
+        }
+        if (localStorage.getItem('unclePDSunlight')) document.body.classList.add('sunlight');
+
+        // Offline support: cache the app so it opens with no signal
+        if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+            navigator.serviceWorker.register('sw.js').catch(err => console.log('Offline mode unavailable:', err));
+        }
 
         // Handle app installation
         let deferredPrompt;
+
+        function showInstallBanner(message, withButton) {
+            if (localStorage.getItem('unclePDInstallDismissed') || document.getElementById('installBanner')) return;
+            const banner = document.createElement('div');
+            banner.id = 'installBanner';
+            banner.style.cssText = 'position: fixed; bottom: calc(72px + env(safe-area-inset-bottom)); left: 12px; right: 12px; background: #2563eb; color: white; padding: 0.75rem 1rem; border-radius: 12px; z-index: 9999; display: flex; gap: 0.5rem; justify-content: space-between; align-items: center; box-shadow: 0 4px 15px rgba(0,0,0,0.3);';
+            banner.innerHTML = `
+                <span>${message}</span>
+                ${withButton ? '<button onclick="installApp()" style="background: white; color: #2563eb; border: none; padding: 0.6rem 1rem; border-radius: 8px; font-weight: bold; cursor: pointer;">Install</button>' : ''}
+                <button onclick="dismissInstallBanner()" aria-label="Dismiss" style="background: none; border: none; color: white; font-size: 1.4rem; padding: 0 0.25rem; cursor: pointer;">×</button>
+            `;
+            document.body.appendChild(banner);
+        }
+
+        function dismissInstallBanner() {
+            localStorage.setItem('unclePDInstallDismissed', '1');
+            const banner = document.getElementById('installBanner');
+            if (banner) banner.remove();
+        }
+
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
-            
-            // Show install banner
-            const installBanner = document.createElement('div');
-            installBanner.innerHTML = `
-                <div style="position: fixed; bottom: 20px; left: 20px; right: 20px; background: #2563eb; color: white; padding: 1rem; border-radius: 10px; z-index: 9999; display: flex; justify-content: space-between; align-items: center;">
-                    <span>📱 Install this app for the best experience!</span>
-                    <button onclick="installApp()" style="background: white; color: #2563eb; border: none; padding: 0.5rem 1rem; border-radius: 5px; cursor: pointer;">Install</button>
-                </div>
-            `;
-            document.body.appendChild(installBanner);
+            showInstallBanner('📱 Put this app on your home screen', true);
         });
+
+        // iPhones never fire beforeinstallprompt, so explain the Share menu instead
+        const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+        const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+        if (isIOS && !isStandalone) {
+            setTimeout(() => showInstallBanner('📱 To install: tap Share, then "Add to Home Screen"', false), 3000);
+        }
 
         function installApp() {
             if (deferredPrompt) {
                 deferredPrompt.prompt();
-                deferredPrompt.userChoice.then((choiceResult) => {
+                deferredPrompt.userChoice.then(() => {
                     deferredPrompt = null;
-                    document.querySelector('[style*="position: fixed; bottom: 20px"]').remove();
+                    dismissInstallBanner();
                 });
             }
         }

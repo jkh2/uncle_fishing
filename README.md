@@ -1,21 +1,24 @@
 🎣 Uncle PD's AI Fishing Partner
 Welcome to Your Personal Fishing Companion!
-Hey Uncle PD! This fishing app was built especially for you and your Northwest Indiana fishing adventures. It's packed with everything you need to make every fishing trip a success!
+Hey Uncle PD! This fishing app was built especially for you and your fishing adventures all over Indiana. It's packed with everything you need to make every fishing trip a success!
 
 🌟 What Makes This App Special
 🎯 Built Just for You
 
 Your name is right in the title - this is YOUR app!
 Your cartoon avatar appears in the header (just upload unclepd.jpg)
-Designed specifically for Northwest Indiana waters
+Designed for Indiana waters, from Lake Michigan to the southern reservoirs
 All your secret spots stay private on your device
 
 📱 Works Everywhere
 
+Built for your phone: big buttons along the bottom (Map, Conditions, Ask, My Spots)
+Sunlight mode (the ☀️ button) makes everything high contrast so you can read it in bright sun
+Opens with no signal once it's installed; map areas you've looked at stay saved
 Perfect on your phone while you're on the water
 Works on tablets and computers too
 No internet required once it's loaded (except for live weather)
-Can be "installed" on your phone's home screen like a real app
+Installs to your home screen like a real app (iPhone: Share, then "Add to Home Screen"; Android: tap Install)
 
 
 🗺️ How to Use Your Fishing App
@@ -111,6 +114,9 @@ File Structure:
 📁 Your Website Folder
 ├── 📄 index.html (the main app file)
 ├── 📄 suncalc.js (sun and moon math for solunar times)
+├── 📄 sw.js (lets the app open with no signal)
+├── 📄 manifest.webmanifest (lets the app install to the home screen)
+├── 📁 icons/ (home screen icons made from your avatar)
 └── 🖼️ unclepd.jpg (your cartoon avatar)
 
 🎣 What Each Section Does
