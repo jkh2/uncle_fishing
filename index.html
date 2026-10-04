@@ -7,6 +7,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <script src="suncalc.js"></script>
     <style>
         * {
             margin: 0;
@@ -540,6 +541,142 @@
             margin-top: 0.25rem;
         }
 
+        .cond-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .cond-refresh {
+            background: none;
+            border: 2px solid #2563eb;
+            color: #2563eb;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            cursor: pointer;
+        }
+
+        .cond-refresh.spinning i {
+            animation: spin 1s linear infinite;
+        }
+
+        .cond-location {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .cond-updated {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-bottom: 1rem;
+        }
+
+        .cond-updated.stale {
+            color: #b45309;
+        }
+
+        .score-card {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 15px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .score-ring {
+            flex: 0 0 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 6px solid #94a3b8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #1e293b;
+        }
+
+        .score-ring small {
+            font-size: 0.8rem;
+            color: #64748b;
+        }
+
+        .score-card.excellent .score-ring { border-color: #10b981; }
+        .score-card.good .score-ring { border-color: #2563eb; }
+        .score-card.fair .score-ring { border-color: #f59e0b; }
+        .score-card.poor .score-ring { border-color: #ef4444; }
+
+        .score-label {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #1e293b;
+            margin-bottom: 0.25rem;
+        }
+
+        .score-reasons {
+            margin: 0;
+            padding-left: 1.1rem;
+            font-size: 0.85rem;
+            color: #475569;
+        }
+
+        .panel {
+            background: white;
+            padding: 1.25rem;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-bottom: 1rem;
+        }
+
+        .panel h3 {
+            margin-bottom: 0.75rem;
+            color: #1e293b;
+        }
+
+        .panel-note {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-top: 0.75rem;
+        }
+
+        .best-times {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .time-slot {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0.75rem;
+            border-radius: 8px;
+            background: #f1f5f9;
+            font-size: 0.9rem;
+        }
+
+        .time-slot.major { background: #dbeafe; }
+        .time-slot.light { background: #fef3c7; }
+        .time-slot.now { outline: 2px solid #10b981; font-weight: bold; }
+        .time-slot.past { opacity: 0.45; }
+
+        .forecast-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 0.25rem;
+            text-align: center;
+            font-size: 0.8rem;
+        }
+
+        .forecast-day .fc-icon { font-size: 1.4rem; margin: 0.2rem 0; }
+        .forecast-day .fc-wind, .forecast-day .fc-rain { color: #64748b; font-size: 0.7rem; }
+
         /* Quick Actions */
         .quick-actions {
             display: grid;
@@ -782,61 +919,80 @@
             <!-- Conditions Section -->
             <section class="section" id="conditions">
                 <div class="conditions-container">
-                    <h2 style="margin-bottom: 1rem; color: #1e293b;">Current Conditions</h2>
-                    
+                    <div class="cond-toolbar">
+                        <h2 style="color: #1e293b; margin: 0;">Fishing Conditions</h2>
+                        <button class="cond-refresh" onclick="refreshConditions(true)" title="Refresh">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+                    <div class="cond-location">
+                        <label for="condLocation" class="form-label" style="margin: 0;">For:</label>
+                        <select id="condLocation" class="form-input" onchange="setConditionsLocation(this.value)"></select>
+                    </div>
+                    <div class="cond-updated" id="condUpdated">Loading live conditions...</div>
+
+                    <div class="score-card" id="scoreCard">
+                        <div class="score-ring"><span id="biteScore">–</span><small>/10</small></div>
+                        <div class="score-text">
+                            <div class="score-label" id="biteLabel">Checking the water...</div>
+                            <ul class="score-reasons" id="biteReasons"></ul>
+                        </div>
+                    </div>
+
                     <div class="conditions-grid">
                         <div class="condition-card">
-                            <div class="condition-title">
-                                <i class="fas fa-thermometer-half"></i>
-                                Weather
-                            </div>
-                            <div class="condition-value" id="temperature">72°F</div>
-                            <div class="condition-desc">Partly cloudy, light breeze</div>
+                            <div class="condition-title"><i class="fas fa-thermometer-half"></i> Weather</div>
+                            <div class="condition-value" id="temperature">–</div>
+                            <div class="condition-desc" id="weatherDesc"></div>
                         </div>
 
                         <div class="condition-card">
-                            <div class="condition-title">
-                                <i class="fas fa-water"></i>
-                                Water Temp
-                            </div>
-                            <div class="condition-value" id="waterTemp">68°F</div>
-                            <div class="condition-desc">Good for bass and pike</div>
+                            <div class="condition-title"><i class="fas fa-wind"></i> Wind</div>
+                            <div class="condition-value" id="windSpeed">–</div>
+                            <div class="condition-desc" id="windDesc"></div>
                         </div>
 
                         <div class="condition-card">
-                            <div class="condition-title">
-                                <i class="fas fa-wind"></i>
-                                Wind
-                            </div>
-                            <div class="condition-value" id="windSpeed">8 mph</div>
-                            <div class="condition-desc">SW, ideal for casting</div>
+                            <div class="condition-title"><i class="fas fa-tachometer-alt"></i> Barometer</div>
+                            <div class="condition-value" id="pressure">–</div>
+                            <div class="condition-desc" id="pressureDesc"></div>
                         </div>
 
                         <div class="condition-card">
-                            <div class="condition-title">
-                                <i class="fas fa-eye"></i>
-                                Conditions
-                            </div>
-                            <div class="condition-value" id="fishingConditions">Excellent</div>
-                            <div class="condition-desc">Prime fishing time!</div>
+                            <div class="condition-title"><i class="fas fa-water"></i> Water Temp</div>
+                            <div class="condition-value" id="waterTemp">–</div>
+                            <div class="condition-desc" id="waterDesc"></div>
+                        </div>
+
+                        <div class="condition-card">
+                            <div class="condition-title"><i class="fas fa-moon"></i> Moon</div>
+                            <div class="condition-value" id="moonPhase">–</div>
+                            <div class="condition-desc" id="moonDesc"></div>
+                        </div>
+
+                        <div class="condition-card">
+                            <div class="condition-title"><i class="fas fa-sun"></i> Sun</div>
+                            <div class="condition-value" id="sunTimes">–</div>
+                            <div class="condition-desc" id="sunDesc"></div>
                         </div>
                     </div>
 
-                    <div style="background: white; padding: 1.5rem; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
-                        <h3 style="margin-bottom: 1rem; color: #1e293b;">Weekly Forecast</h3>
-                        <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.5rem; text-align: center;">
-                            <div><strong>Mon</strong><br>🌤️<br>75°</div>
-                            <div><strong>Tue</strong><br>☀️<br>78°</div>
-                            <div><strong>Wed</strong><br>🌦️<br>71°</div>
-                            <div><strong>Thu</strong><br>☁️<br>69°</div>
-                            <div><strong>Fri</strong><br>🌤️<br>73°</div>
-                            <div><strong>Sat</strong><br>☀️<br>76°</div>
-                            <div><strong>Sun</strong><br>🌤️<br>74°</div>
-                        </div>
+                    <div class="panel">
+                        <h3>Best Times Today</h3>
+                        <div id="bestTimes" class="best-times"></div>
+                        <p class="panel-note">Solunar periods are when the moon is overhead or underfoot (major, about 2 hours) or rising and setting (minor, about 1 hour). Dawn and dusk are prime for most species.</p>
                     </div>
+
+                    <div class="panel">
+                        <h3>7-Day Forecast</h3>
+                        <div id="forecast" class="forecast-grid"></div>
+                    </div>
+
+                    <p class="panel-note" style="text-align: center; margin: 1rem 0 2rem;">
+                        Weather from <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a>. The bite score uses old-timer rules of thumb (pressure, wind, moon, light), not guarantees.
+                    </p>
                 </div>
             </section>
-
             <!-- My Lakes Section -->
             <section class="section" id="mylakes">
                 <div class="conditions-container">
@@ -1235,6 +1391,7 @@
             saveCustomLakes();
             displayCustomLakes();
             addCustomLakeMarker(spotData);
+            populateConditionsLocations();
             hideQuickAddForm();
             
             // Turn off add spot mode
@@ -1308,6 +1465,7 @@
             saveCustomLakes();
             displayCustomLakes();
             addCustomLakeMarker(lakeData);
+            populateConditionsLocations();
             hideAddLakeForm();
             
             // Show success message
@@ -1321,6 +1479,8 @@
             
             if (customLakes.length === 0) {
                 noLakesMsg.style.display = 'block';
+                const existing = document.getElementById('customLakesContainer');
+                if (existing) existing.innerHTML = '';
                 return;
             }
             
@@ -1429,6 +1589,10 @@
                             style="background: #10b981; color: white; border: none; padding: 6px 10px; border-radius: 4px; margin-top: 8px; cursor: pointer; font-size: 12px;">
                         Get Directions
                     </button>
+                    <button onclick="showConditionsFor('${lake.id}')"
+                            style="background: #764ba2; color: white; border: none; padding: 6px 10px; border-radius: 4px; margin-top: 8px; cursor: pointer; font-size: 12px;">
+                        Conditions
+                    </button>
                 </div>
             `;
 
@@ -1466,19 +1630,20 @@
         // Delete custom lake
         function deleteCustomLake(lakeId) {
             if (confirm('Are you sure you want to delete this secret spot?')) {
-                // Remove from array
-                customLakes = customLakes.filter(l => l.id !== lakeId);
-                
-                // Remove marker from map
-                const markerIndex = customMarkers.findIndex(m => m.options.title.includes(customLakes.find(l => l.id === lakeId)?.name || ''));
+                // Remove marker from map (look up the spot before it leaves the list)
+                const lake = customLakes.find(l => l.id === lakeId);
+                const markerIndex = lake ? customMarkers.findIndex(m => m.options.title === lake.name + ' (Uncle PD\'s Spot)') : -1;
                 if (markerIndex > -1) {
                     map.removeLayer(customMarkers[markerIndex]);
                     customMarkers.splice(markerIndex, 1);
                 }
+
+                customLakes = customLakes.filter(l => l.id !== lakeId);
                 
                 // Save and refresh display
                 saveCustomLakes();
                 displayCustomLakes();
+                populateConditionsLocations();
             }
         }
         let map;
@@ -1599,6 +1764,10 @@
                     <button onclick="getDirections(${lake.coords.lat}, ${lake.coords.lng})" 
                             style="background: #2563eb; color: white; border: none; padding: 6px 10px; border-radius: 4px; margin-top: 8px; cursor: pointer; font-size: 12px;">
                         Get Directions
+                    </button>
+                    <button onclick="showConditionsFor('${lakeId}')"
+                            style="background: #764ba2; color: white; border: none; padding: 6px 10px; border-radius: 4px; margin-top: 8px; cursor: pointer; font-size: 12px;">
+                        Conditions
                     </button>
                 </div>
             `;
@@ -1803,7 +1972,10 @@
             
             try {
                 // Try completely free APIs with NO signup required
-                let response = await tryFreeGPTAPI(userMessage) || 
+                const lower = userMessage.toLowerCase();
+                const liveAnswer = /weather|condition|wind|pressure|barometer|moon|solunar|when should|best time/.test(lower) ? conditionsSummary() : null;
+                let response = liveAnswer ||
+                              await tryFreeGPTAPI(userMessage) || 
                               await tryAnonChatGPT(userMessage) ||
                               getContextualResponse(userMessage.toLowerCase());
                 
@@ -1974,25 +2146,7 @@ Focus on transition zones where deep meets shallow!`
                 ],
 
                 'weather': [
-                    `Uncle PD's fishing weather outlook:
-
-🌤️ **Today**: 72°F, partly cloudy, SW winds 8mph - **Excellent** conditions
-🌡️ **Water Temp**: 68°F - Prime temperature for bass, walleye, and pike
-📊 **Barometric Pressure**: Stable - Fish should be actively feeding
-🌅 **Best Times**: Dawn (6:30-8:30 AM) and dusk (7:00-9:00 PM)
-⛅ **Tomorrow**: Similar conditions with light winds
-
-This is ideal fishing weather - get out there Uncle PD!`,
-
-                    `Weather conditions for Uncle PD's fishing:
-
-🎯 **Wind**: SW 8mph - Perfect for casting and boat control
-🎯 **Sky**: Partly cloudy - Great for topwater action
-🎯 **Pressure**: Rising slowly - Fish becoming more active
-🎯 **Humidity**: 65% - Comfortable conditions for all-day fishing
-🎯 **Moon Phase**: Waxing crescent - Good for evening bite
-
-The next 3 days look excellent for fishing!`
+                    `I couldn't load live weather just now, so I won't guess. Check your signal and open the Conditions tab (the cloud button up top) to retry.`
                 ],
 
                 'techniques': [
@@ -2124,25 +2278,351 @@ Just ask me anything specific about your fishing plans!`
             }
         });
 
-        // Simulate real-time data updates
-        function updateConditions() {
-            const conditions = [
-                { temp: '72°F', water: '68°F', wind: '8 mph', status: 'Excellent' },
-                { temp: '74°F', water: '69°F', wind: '5 mph', status: 'Perfect' },
-                { temp: '71°F', water: '67°F', wind: '12 mph', status: 'Good' },
-                { temp: '73°F', water: '68°F', wind: '6 mph', status: 'Excellent' }
-            ];
-            
-            const current = conditions[Math.floor(Math.random() * conditions.length)];
-            
-            document.getElementById('temperature').textContent = current.temp;
-            document.getElementById('waterTemp').textContent = current.water;
-            document.getElementById('windSpeed').textContent = current.wind;
-            document.getElementById('fishingConditions').textContent = current.status;
+        // Live fishing conditions: weather from Open-Meteo (free, no key), sun and moon from SunCalc
+        const CONDITIONS_CACHE_KEY = 'unclePDConditions';
+        const CONDITIONS_LOCATION_KEY = 'unclePDConditionsLocation';
+        const CONDITIONS_REFRESH_MS = 15 * 60 * 1000;
+        let conditionsState = null;
+        let conditionsLocationId = localStorage.getItem(CONDITIONS_LOCATION_KEY) || 'cedar-lake';
+        let myLocationCoords = null;
+
+        const WEATHER_CODES = {
+            0: ['Clear', '☀️'], 1: ['Mostly clear', '🌤️'], 2: ['Partly cloudy', '⛅'], 3: ['Overcast', '☁️'],
+            45: ['Fog', '🌫️'], 48: ['Freezing fog', '🌫️'],
+            51: ['Light drizzle', '🌦️'], 53: ['Drizzle', '🌦️'], 55: ['Heavy drizzle', '🌧️'],
+            56: ['Freezing drizzle', '🌧️'], 57: ['Freezing drizzle', '🌧️'],
+            61: ['Light rain', '🌦️'], 63: ['Rain', '🌧️'], 65: ['Heavy rain', '🌧️'],
+            66: ['Freezing rain', '🌧️'], 67: ['Freezing rain', '🌧️'],
+            71: ['Light snow', '🌨️'], 73: ['Snow', '🌨️'], 75: ['Heavy snow', '❄️'], 77: ['Snow grains', '🌨️'],
+            80: ['Light showers', '🌦️'], 81: ['Showers', '🌧️'], 82: ['Violent showers', '⛈️'],
+            85: ['Snow showers', '🌨️'], 86: ['Heavy snow showers', '❄️'],
+            95: ['Thunderstorms', '⛈️'], 96: ['Thunderstorms, hail', '⛈️'], 99: ['Severe storms, hail', '⛈️']
+        };
+
+        function weatherInfo(code) {
+            return WEATHER_CODES[code] || ['Unknown', '❔'];
         }
 
-        // Update conditions every 30 seconds
-        setInterval(updateConditions, 30000);
+        function compassPoint(deg) {
+            const points = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
+            return points[Math.round(((deg % 360) + 360) % 360 / 22.5) % 16];
+        }
+
+        function formatTime(date) {
+            if (!date || isNaN(date)) return '–';
+            return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+        }
+
+        function escapeHTML(text) {
+            const div = document.createElement('div');
+            div.textContent = text == null ? '' : String(text);
+            return div.innerHTML;
+        }
+
+        // Every place conditions can be shown for: public lakes, secret spots, and his phone's GPS
+        function conditionsLocations() {
+            const list = [{ id: 'my-location', name: '📍 My current location', coords: myLocationCoords }];
+            Object.keys(lakeData).forEach(id => list.push({ id, name: lakeData[id].name, coords: lakeData[id].coords }));
+            customLakes.forEach(l => list.push({ id: l.id, name: '⭐ ' + l.name, coords: l.coords }));
+            return list;
+        }
+
+        function populateConditionsLocations() {
+            const select = document.getElementById('condLocation');
+            const locations = conditionsLocations();
+            if (!locations.some(l => l.id === conditionsLocationId)) conditionsLocationId = 'cedar-lake';
+            select.innerHTML = locations.map(l =>
+                `<option value="${escapeHTML(l.id)}"${l.id === conditionsLocationId ? ' selected' : ''}>${escapeHTML(l.name)}</option>`
+            ).join('');
+        }
+
+        function setConditionsLocation(id) {
+            conditionsLocationId = id;
+            localStorage.setItem(CONDITIONS_LOCATION_KEY, id);
+            refreshConditions(true);
+        }
+
+        function showConditionsFor(id) {
+            setConditionsLocation(id);
+            populateConditionsLocations();
+            switchSection('conditions');
+        }
+
+        function getMyLocation() {
+            return new Promise((resolve, reject) => {
+                if (!navigator.geolocation) return reject(new Error('No GPS on this device'));
+                navigator.geolocation.getCurrentPosition(
+                    pos => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+                    () => reject(new Error('Location permission denied')),
+                    { timeout: 10000, maximumAge: 5 * 60 * 1000 }
+                );
+            });
+        }
+
+        async function fetchWeather(coords) {
+            const params = new URLSearchParams({
+                latitude: coords.lat.toFixed(4),
+                longitude: coords.lng.toFixed(4),
+                current: 'temperature_2m,apparent_temperature,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m,pressure_msl,cloud_cover',
+                hourly: 'pressure_msl',
+                daily: 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max,wind_direction_10m_dominant,sunrise,sunset',
+                past_days: '7',
+                forecast_days: '7',
+                temperature_unit: 'fahrenheit',
+                wind_speed_unit: 'mph',
+                timezone: 'auto'
+            });
+            const response = await fetch('https://api.open-meteo.com/v1/forecast?' + params);
+            if (!response.ok) throw new Error('Weather service returned ' + response.status);
+            return response.json();
+        }
+
+        async function refreshConditions(force) {
+            const refreshBtn = document.querySelector('.cond-refresh');
+            const updated = document.getElementById('condUpdated');
+            let location = conditionsLocations().find(l => l.id === conditionsLocationId);
+
+            const cache = JSON.parse(localStorage.getItem(CONDITIONS_CACHE_KEY) || 'null');
+            if (!force && cache && cache.locationId === conditionsLocationId && Date.now() - cache.fetchedAt < CONDITIONS_REFRESH_MS) {
+                renderConditions(cache);
+                return;
+            }
+
+            refreshBtn.classList.add('spinning');
+            try {
+                if (location.id === 'my-location') {
+                    myLocationCoords = await getMyLocation();
+                    location = { ...location, coords: myLocationCoords };
+                }
+                const weather = await fetchWeather(location.coords);
+                const data = { locationId: location.id, name: location.name, coords: location.coords, weather, fetchedAt: Date.now() };
+                localStorage.setItem(CONDITIONS_CACHE_KEY, JSON.stringify(data));
+                renderConditions(data);
+            } catch (error) {
+                console.log('Conditions unavailable:', error);
+                if (cache && cache.locationId === conditionsLocationId) {
+                    renderConditions(cache);
+                    updated.textContent += ` (offline: ${error.message})`;
+                    updated.classList.add('stale');
+                } else {
+                    updated.textContent = `Couldn't load conditions: ${error.message}. Check your signal and tap refresh.`;
+                    updated.classList.add('stale');
+                }
+            } finally {
+                refreshBtn.classList.remove('spinning');
+            }
+        }
+
+        // Moon overhead (major) and underfoot (major), rise and set (minor), sampled every 5 minutes
+        function solunarPeriods(day, coords) {
+            const start = new Date(day);
+            start.setHours(0, 0, 0, 0);
+            let high = { alt: -Infinity }, low = { alt: Infinity };
+            for (let m = 0; m <= 24 * 60; m += 5) {
+                const t = new Date(start.getTime() + m * 60000);
+                const alt = SunCalc.getMoonPosition(t, coords.lat, coords.lng).altitude;
+                if (alt > high.alt) high = { alt, t };
+                if (alt < low.alt) low = { alt, t };
+            }
+            const moonTimes = SunCalc.getMoonTimes(start, coords.lat, coords.lng);
+            const periods = [];
+            const add = (center, halfMinutes, type, label) => {
+                // Skip transits pinned to the day's edge; the true one falls on the neighboring day
+                if (!center || center.getTime() === start.getTime() || center.getTime() === start.getTime() + 86400000) return;
+                periods.push({ start: new Date(center - halfMinutes * 60000), end: new Date(center.getTime() + halfMinutes * 60000), type, label });
+            };
+            add(high.t, 60, 'major', 'Major: moon overhead');
+            add(low.t, 60, 'major', 'Major: moon underfoot');
+            add(moonTimes.rise, 30, 'minor', 'Minor: moonrise');
+            add(moonTimes.set, 30, 'minor', 'Minor: moonset');
+            return periods;
+        }
+
+        function moonPhaseName(phase) {
+            if (phase < 0.03 || phase > 0.97) return ['New Moon', '🌑'];
+            if (phase < 0.22) return ['Waxing Crescent', '🌒'];
+            if (phase < 0.28) return ['First Quarter', '🌓'];
+            if (phase < 0.47) return ['Waxing Gibbous', '🌔'];
+            if (phase < 0.53) return ['Full Moon', '🌕'];
+            if (phase < 0.72) return ['Waning Gibbous', '🌖'];
+            if (phase < 0.78) return ['Last Quarter', '🌗'];
+            return ['Waning Crescent', '🌘'];
+        }
+
+        function analyzeConditions(data, now) {
+            const w = data.weather;
+            const current = w.current;
+            const hourIndex = w.hourly.time.indexOf(current.time.slice(0, 13) + ':00');
+            const pressureNow = current.pressure_msl * 0.02953;
+            const pressure3hAgo = hourIndex >= 3 ? w.hourly.pressure_msl[hourIndex - 3] * 0.02953 : null;
+            const pressureChange = pressure3hAgo == null ? 0 : pressureNow - pressure3hAgo;
+
+            const todayIndex = w.daily.time.indexOf(current.time.slice(0, 10));
+            const sunrise = new Date(w.daily.sunrise[todayIndex]);
+            const sunset = new Date(w.daily.sunset[todayIndex]);
+            // Open-Meteo returns local wall-clock times; anchor them to his phone's clock
+            const localNoon = new Date(now);
+            localNoon.setHours(12, 0, 0, 0);
+            const sunTimes = SunCalc.getTimes(localNoon, data.coords.lat, data.coords.lng);
+            const dawn = isNaN(sunTimes.sunrise) ? sunrise : sunTimes.sunrise;
+            const dusk = isNaN(sunTimes.sunset) ? sunset : sunTimes.sunset;
+
+            const moon = SunCalc.getMoonIllumination(now);
+            const periods = solunarPeriods(now, data.coords);
+            periods.push({ start: new Date(dawn - 3600000), end: new Date(dawn.getTime() + 3600000), type: 'light', label: 'Dawn bite' });
+            periods.push({ start: new Date(dusk - 3600000), end: new Date(dusk.getTime() + 3600000), type: 'light', label: 'Dusk bite' });
+            periods.sort((a, b) => a.start - b.start);
+
+            // Water temp estimate: shallow inland lakes track roughly the past week's average air temperature
+            const pastDays = w.daily.time.slice(0, todayIndex);
+            let waterEstimate = null;
+            if (pastDays.length) {
+                const avgs = pastDays.map((_, i) => (w.daily.temperature_2m_max[i] + w.daily.temperature_2m_min[i]) / 2);
+                waterEstimate = Math.max(33, avgs.reduce((a, b) => a + b, 0) / avgs.length);
+            }
+
+            let score = 5;
+            const reasons = [];
+            const code = current.weather_code;
+            if (code >= 95) {
+                score -= 4;
+                reasons.push('⚡ Thunderstorms around. Get off the water.');
+            }
+            if (pressureChange <= -0.06) {
+                score += 1;
+                reasons.push('📉 Pressure dropping fast. A front is coming; fish often feed hard before it hits.');
+            } else if (pressureChange <= -0.02) {
+                score += 2;
+                reasons.push('📉 Pressure falling. Classic feeding trigger.');
+            } else if (pressureChange >= 0.06) {
+                score -= 2;
+                reasons.push('📈 Pressure rising fast behind a front. Fish get tight-lipped; slow down and go finesse.');
+            } else if (pressureChange >= 0.02) {
+                score -= 1;
+                reasons.push('📈 Pressure rising. Bite may slow; fish tighter to cover.');
+            } else {
+                score += 1;
+                reasons.push('➖ Pressure steady. Fish are settled into normal patterns.');
+            }
+
+            const wind = current.wind_speed_10m;
+            if (wind > 22 || current.wind_gusts_10m > 30) {
+                score -= 2;
+                reasons.push(`🌬️ Wind ${Math.round(wind)} mph, gusts ${Math.round(current.wind_gusts_10m)}. Rough out there; be careful in a small boat.`);
+            } else if (wind >= 4 && wind <= 15) {
+                score += 1;
+                reasons.push(`🌬️ Nice chop from the ${compassPoint(current.wind_direction_10m)}. Breaks up light and stirs baitfish.`);
+            } else if (wind < 4) {
+                reasons.push('🪞 Calm, glassy water. Fish spook easier; try topwater or long casts.');
+            }
+
+            const activePeriod = periods.find(p => now >= p.start && now <= p.end);
+            if (activePeriod) {
+                score += activePeriod.type === 'major' ? 2 : 1;
+                reasons.push(`🕐 Right now: ${activePeriod.label}.`);
+            }
+
+            const daysFromNewOrFull = Math.min(moon.phase, Math.abs(moon.phase - 0.5), 1 - moon.phase) * 29.53;
+            if (daysFromNewOrFull <= 3) {
+                score += 1;
+                reasons.push(`${moonPhaseName(moon.phase)[1]} Near the ${moon.phase > 0.25 && moon.phase < 0.75 ? 'full' : 'new'} moon. Stronger solunar days.`);
+            }
+
+            score = Math.max(1, Math.min(code >= 95 ? 2 : 10, score));
+            const rating = score >= 8 ? 'Excellent' : score >= 6 ? 'Good' : score >= 4 ? 'Fair' : 'Poor';
+            return { pressureNow, pressureChange, pressure3hAgo, sunrise: dawn, sunset: dusk, moon, periods, waterEstimate, score, rating, reasons, activePeriod };
+        }
+
+        function renderConditions(data) {
+            const now = new Date();
+            const w = data.weather;
+            const c = w.current;
+            const a = analyzeConditions(data, now);
+            conditionsState = { data, analysis: a };
+
+            const minutesAgo = Math.round((Date.now() - data.fetchedAt) / 60000);
+            const updated = document.getElementById('condUpdated');
+            updated.textContent = `Updated ${minutesAgo < 1 ? 'just now' : minutesAgo + ' min ago'} · ${data.name.replace(/^[📍⭐] /u, '')}`;
+            updated.classList.toggle('stale', minutesAgo > 60);
+
+            const card = document.getElementById('scoreCard');
+            card.className = 'score-card ' + a.rating.toLowerCase();
+            document.getElementById('biteScore').textContent = a.score;
+            document.getElementById('biteLabel').textContent = `${a.rating} fishing right now`;
+            document.getElementById('biteReasons').innerHTML = a.reasons.map(r => `<li>${escapeHTML(r)}</li>`).join('');
+
+            const [desc, icon] = weatherInfo(c.weather_code);
+            document.getElementById('temperature').textContent = `${icon} ${Math.round(c.temperature_2m)}°F`;
+            document.getElementById('weatherDesc').textContent = `${desc}, feels like ${Math.round(c.apparent_temperature)}°F`;
+
+            const windFrom = compassPoint(c.wind_direction_10m);
+            const windTo = compassPoint(c.wind_direction_10m + 180);
+            document.getElementById('windSpeed').textContent = `${Math.round(c.wind_speed_10m)} mph ${windFrom}`;
+            document.getElementById('windDesc').textContent = `Gusts ${Math.round(c.wind_gusts_10m)} mph. Wind blows bait to the ${windTo} shore; fish it.`;
+
+            const trend = a.pressure3hAgo == null ? 'trend unknown'
+                : Math.abs(a.pressureChange) < 0.02 ? 'steady'
+                : `${a.pressureChange < 0 ? 'falling' : 'rising'} ${Math.abs(a.pressureChange).toFixed(2)} in 3 hrs`;
+            document.getElementById('pressure').textContent = `${a.pressureNow.toFixed(2)} inHg`;
+            document.getElementById('pressureDesc').textContent = trend.charAt(0).toUpperCase() + trend.slice(1);
+
+            if (data.locationId === 'lake-michigan') {
+                document.getElementById('waterTemp').textContent = 'See GLERL';
+                document.getElementById('waterDesc').innerHTML = 'Lake Michigan is too big to estimate. <a href="https://coastwatch.glerl.noaa.gov/" target="_blank" rel="noopener" style="color: white;">Live NOAA surface temps</a>';
+            } else if (a.waterEstimate != null) {
+                document.getElementById('waterTemp').textContent = `~${Math.round(a.waterEstimate)}°F`;
+                document.getElementById('waterDesc').textContent = 'Estimated from the past week of air temps. Check with a thermometer.';
+            }
+
+            const [phaseName, phaseIcon] = moonPhaseName(a.moon.phase);
+            document.getElementById('moonPhase').textContent = `${phaseIcon} ${phaseName}`;
+            document.getElementById('moonDesc').textContent = `${Math.round(a.moon.fraction * 100)}% illuminated`;
+
+            document.getElementById('sunTimes').textContent = `${formatTime(a.sunrise)} – ${formatTime(a.sunset)}`;
+            document.getElementById('sunDesc').textContent = 'Sunrise to sunset';
+
+            document.getElementById('bestTimes').innerHTML = a.periods.map(p => {
+                const state = now > p.end ? ' past' : (now >= p.start ? ' now' : '');
+                return `<div class="time-slot ${p.type}${state}"><span>${escapeHTML(p.label)}</span><span>${formatTime(p.start)} – ${formatTime(p.end)}</span></div>`;
+            }).join('');
+
+            const todayIndex = w.daily.time.indexOf(c.time.slice(0, 10));
+            const days = w.daily.time.slice(todayIndex, todayIndex + 7);
+            document.getElementById('forecast').innerHTML = days.map((day, j) => {
+                const i = todayIndex + j;
+                const label = j === 0 ? 'Today' : new Date(day + 'T12:00').toLocaleDateString([], { weekday: 'short' });
+                const [fcDesc, fcIcon] = weatherInfo(w.daily.weather_code[i]);
+                return `<div class="forecast-day" title="${escapeHTML(fcDesc)}">
+                    <strong>${label}</strong>
+                    <div class="fc-icon">${fcIcon}</div>
+                    ${Math.round(w.daily.temperature_2m_max[i])}°/${Math.round(w.daily.temperature_2m_min[i])}°
+                    <div class="fc-wind">${Math.round(w.daily.wind_speed_10m_max[i])} ${compassPoint(w.daily.wind_direction_10m_dominant[i])}</div>
+                    <div class="fc-rain">💧${w.daily.precipitation_probability_max[i] ?? 0}%</div>
+                </div>`;
+            }).join('');
+        }
+
+        // Plain-English summary for the chat assistant
+        function conditionsSummary() {
+            if (!conditionsState) return null;
+            const { data, analysis: a } = conditionsState;
+            const c = data.weather.current;
+            const next = a.periods.find(p => p.end > new Date());
+            return `Here's what it looks like at <strong>${escapeHTML(data.name.replace(/^[📍⭐] /u, ''))}</strong> right now:<br><br>
+🎣 <strong>Bite score: ${a.score}/10 (${a.rating})</strong><br>
+🌡️ ${Math.round(c.temperature_2m)}°F, ${weatherInfo(c.weather_code)[0].toLowerCase()}<br>
+🌬️ Wind ${Math.round(c.wind_speed_10m)} mph from the ${compassPoint(c.wind_direction_10m)}<br>
+📊 Barometer ${a.pressureNow.toFixed(2)} inHg<br>
+${moonPhaseName(a.moon.phase)[1]} ${moonPhaseName(a.moon.phase)[0]}<br>
+${next ? `⏰ Next good window: ${escapeHTML(next.label)}, ${formatTime(next.start)} – ${formatTime(next.end)}<br>` : ''}<br>
+${a.reasons.map(escapeHTML).join('<br>')}`;
+        }
+
+        // Refresh every 15 minutes, and whenever he comes back to the app
+        setInterval(() => refreshConditions(false), CONDITIONS_REFRESH_MS);
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') refreshConditions(false);
+        });
 
         // Initialize app
         document.addEventListener('DOMContentLoaded', function() {
@@ -2151,14 +2631,15 @@ Just ask me anything specific about your fishing plans!`
                 document.querySelector('.app-container').style.opacity = '1';
             }, 100);
             
-            // Initial conditions update
-            updateConditions();
-            
             // Load OpenStreetMap
             loadGoogleMaps();
             
             // Load Uncle PD's custom lakes
             loadCustomLakes();
+
+            // Live conditions
+            populateConditionsLocations();
+            refreshConditions(false);
         });
 
         // Offline support (would be implemented with actual service worker file in production)
@@ -2191,6 +2672,21 @@ Just ask me anything specific about your fishing plans!`
             }
         }
 
+        function distanceMiles(lat1, lon1, lat2, lon2) {
+            const rad = Math.PI / 180;
+            const dLat = (lat2 - lat1) * rad;
+            const dLon = (lon2 - lon1) * rad;
+            const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * rad) * Math.cos(lat2 * rad) * Math.sin(dLon / 2) ** 2;
+            return 3958.8 * 2 * Math.asin(Math.sqrt(h));
+        }
+
+        function bearingDegrees(lat1, lon1, lat2, lon2) {
+            const rad = Math.PI / 180;
+            const y = Math.sin((lon2 - lon1) * rad) * Math.cos(lat2 * rad);
+            const x = Math.cos(lat1 * rad) * Math.sin(lat2 * rad) - Math.sin(lat1 * rad) * Math.cos(lat2 * rad) * Math.cos((lon2 - lon1) * rad);
+            return Math.atan2(y, x) / rad;
+        }
+
         // GPS location for nearby lakes
         function findNearbyLakes() {
             if (navigator.geolocation) {
@@ -2198,7 +2694,13 @@ Just ask me anything specific about your fishing plans!`
                     const lat = position.coords.latitude;
                     const lon = position.coords.longitude;
                     
-                    addMessage(`📍 Current location: ${lat.toFixed(4)}, ${lon.toFixed(4)}\n\nBased on your location, here are the nearest fishing spots:\n\n🎣 Cedar Lake - 2.3 miles north\n🎣 Lake Michigan - 8.7 miles northwest\n🎣 Winona Lake - 12.1 miles south\n\nWould you like directions to any of these locations?`, 'ai');
+                    const nearest = conditionsLocations()
+                        .filter(l => l.id !== 'my-location' && l.coords)
+                        .map(l => ({ ...l, miles: distanceMiles(lat, lon, l.coords.lat, l.coords.lng), bearing: compassPoint(bearingDegrees(lat, lon, l.coords.lat, l.coords.lng)) }))
+                        .sort((a, b) => a.miles - b.miles)
+                        .slice(0, 5);
+                    addMessage(`📍 You're at ${lat.toFixed(4)}, ${lon.toFixed(4)}. Nearest spots:<br><br>` +
+                        nearest.map(l => `🎣 <strong>${escapeHTML(l.name)}</strong>: ${l.miles.toFixed(1)} mi ${l.bearing} · <a href="#" onclick="getDirections(${l.coords.lat}, ${l.coords.lng}); return false;">directions</a>`).join('<br>'), 'ai');
                 }, function(error) {
                     addMessage('Unable to get your location. Please enable location services for the best experience with nearby lake recommendations.', 'ai');
                 });
