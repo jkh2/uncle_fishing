@@ -1484,7 +1484,7 @@
                             <div class="condition-title"><i class="fas fa-water"></i> Water Temp</div>
                             <div class="condition-value" id="waterTemp">–</div>
                             <div class="condition-desc" id="waterDesc"></div>
-                            <div class="condition-desc" style="margin-top: 0.4rem; font-weight: bold;">📝 Tap to enter your fish finder's reading</div>
+                            <div class="condition-desc" style="margin-top: 0.4rem; font-weight: bold;">📝 Tap to enter a water temp you measured</div>
                         </div>
 
                         <div class="condition-card">
@@ -1590,11 +1590,11 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label class="form-label" for="catchDepth">Depth (ft)</label>
-                            <input type="number" id="catchDepth" class="form-input" inputmode="decimal" step="0.5" min="0" placeholder="fish finder">
+                            <input type="number" id="catchDepth" class="form-input" inputmode="decimal" step="0.5" min="0" placeholder="optional">
                         </div>
                         <div class="form-group">
                             <label class="form-label" for="catchWaterTemp">Water temp (°F)</label>
-                            <input type="number" id="catchWaterTemp" class="form-input" inputmode="decimal" step="0.5" min="30" max="95" placeholder="fish finder">
+                            <input type="number" id="catchWaterTemp" class="form-input" inputmode="decimal" step="0.5" min="30" max="95" placeholder="optional">
                         </div>
                     </div>
 
@@ -2923,7 +2923,7 @@
                 lines.push(`\nCONDITIONS at ${place} (updated ${Math.round((Date.now() - data.fetchedAt) / 60000)} min ago):`,
                     `${Math.round(c.temperature_2m)}°F, ${weatherInfo(c.weather_code)[0]}, wind ${Math.round(c.wind_speed_10m)} mph from ${compassPoint(c.wind_direction_10m)} gusting ${Math.round(c.wind_gusts_10m)}`,
                     `Barometer ${a.pressureNow.toFixed(2)} inHg, change over 3 hrs ${a.pressureChange >= 0 ? '+' : ''}${a.pressureChange.toFixed(2)}`,
-                    latestWaterReading(data.coords) ? `Water temp ${latestWaterReading(data.coords).tempF}°F (measured by his fish finder)` :
+                    latestWaterReading(data.coords) ? `Water temp ${latestWaterReading(data.coords).tempF}°F (his own reading)` :
                         a.waterEstimate != null ? `Estimated surface water temp ~${Math.round(a.waterEstimate)}°F (estimate from air temps, not measured)` : '',
                     `Moon: ${moonPhaseName(a.moon.phase)[0]}, ${Math.round(a.moon.fraction * 100)}% lit. Sunrise ${formatTime(a.sunrise)}, sunset ${formatTime(a.sunset)}`,
                     `Bite score now ${a.score}/10 (${a.rating}): ${a.reasons.join(' ')}`,
@@ -3886,7 +3886,7 @@
             return ft <= 5 ? '0–5 ft' : ft <= 10 ? '6–10 ft' : ft <= 15 ? '11–15 ft' : ft <= 20 ? '16–20 ft' : ft <= 30 ? '21–30 ft' : 'Over 30 ft';
         }
 
-        // Water temperature readings he enters from his fish finder beat the air-temperature estimate
+        // Water temperature readings he enters by hand beat the air-temperature estimate
         function waterReadings() {
             try { return JSON.parse(localStorage.getItem('unclePDWaterReadings')) || []; } catch (e) { return []; }
         }
@@ -3904,7 +3904,7 @@
         }
 
         async function logWaterReading() {
-            const value = prompt('Water temperature from your fish finder (°F):');
+            const value = prompt('Water temperature you measured (°F):');
             const tempF = parseFloat(value);
             if (!tempF || tempF < 30 || tempF > 95) return;
             let coords = null;
