@@ -47,7 +47,10 @@ Pick any lake, secret spot, or "My current location"
 Live weather, wind (and which shore it's pushing bait to), and barometric pressure trend
 Moon phase plus solunar major/minor feeding times, sunrise and sunset
 A 1–10 bite score that tells you WHY (pressure, wind, moon, time of day)
-Real 7-day forecast with wind and rain chances
+Real 7-day forecast with wind and rain chances, and a bite score for every day
+Best Bets This Week: the two best days to go, why, and the exact window to be on the water (when a solunar major lines up with sunrise or sunset)
+Next 12 hours: hour-by-hour temperature, wind, gusts and rain
+Safety: National Weather Service warnings show in red across the top of every screen, and storms in the next few hours get a heads-up
 Estimated water temp for inland lakes (NOAA link for Lake Michigan)
 Refreshes every 15 minutes; shows the last reading if you lose signal
 Tap "Conditions" in any map pin to jump straight there
