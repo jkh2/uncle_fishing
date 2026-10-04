@@ -1,7 +1,7 @@
 // Offline support for Uncle PD's Fishing Partner.
 // App files: network first so updates show up, cache when there's no signal.
 // Libraries and map tiles: cache first, so places he has looked at still draw offline.
-const APP_CACHE = 'pd-app-v1';
+const APP_CACHE = 'pd-app-v2';
 const TILE_CACHE = 'pd-tiles-v1';
 const MAX_TILES = 600;
 

@@ -1227,6 +1227,18 @@
             gap: 3px;
         }
 
+        .speak-btn {
+            display: block;
+            margin-top: 0.5rem;
+            background: none;
+            border: 1px solid #cbd5e1;
+            border-radius: 999px;
+            padding: 0.3rem 0.75rem;
+            font-size: 0.8rem;
+            color: #475569;
+            cursor: pointer;
+        }
+
         .typing-dot {
             width: 6px;
             height: 6px;
@@ -1384,30 +1396,31 @@
             <section class="section" id="chat">
                 <div class="chat-container">
                     <div class="quick-actions">
-                        <button class="quick-action" onclick="sendQuickMessage('What are the best fishing spots today?')">
-                            <i class="fas fa-map-marker-alt"></i><br>Best Spots
+                        <button class="quick-action" onclick="sendQuickMessage('Based on the conditions, where and how should I fish today?')">
+                            <i class="fas fa-map-marker-alt"></i><br>Game Plan
                         </button>
-                        <button class="quick-action" onclick="sendQuickMessage('What fish are biting this week?')">
+                        <button class="quick-action" onclick="sendQuickMessage('What should be biting right now, and where should I look for them?')">
                             <i class="fas fa-fish"></i><br>What's Biting
                         </button>
-                        <button class="quick-action" onclick="sendQuickMessage('What are the current fishing regulations?')">
-                            <i class="fas fa-gavel"></i><br>Regulations
+                        <button class="quick-action" onclick="sendQuickMessage('What lure or bait should I tie on right now, and how should I fish it?')">
+                            <i class="fas fa-seedling"></i><br>Tie On
                         </button>
-                        <button class="quick-action" onclick="sendQuickMessage('Best bait for current conditions?')">
-                            <i class="fas fa-seedling"></i><br>Best Bait
+                        <button class="quick-action" onclick="sendQuickMessage('Which day and time this week looks best to go fishing, and why?')">
+                            <i class="fas fa-calendar-alt"></i><br>Best Day
+                        </button>
+                        <button class="quick-action" onclick="sendQuickMessage('Looking at my catch log, what patterns do you see and what should I try next?')">
+                            <i class="fas fa-chart-line"></i><br>My Patterns
                         </button>
                     </div>
                     
                     <div class="chat-messages" id="chatMessages">
                         <div class="message ai fade-in">
-                            <strong>🎣 Uncle PD's AI Fishing Assistant</strong><br><br>
-                            Welcome back, Uncle PD! I'm your personal fishing companion for Indiana waters. I can help you with:
-                            <br>• Local fishing conditions and forecasts
-                            <br>• Lake information and hotspots
-                            <br>• Fish species and techniques
-                            <br>• Regulations and licensing
-                            <br>• Your secret fishing spots
-                            <br><br>What would you like to know about fishing today?
+                            <strong>🎣 Uncle PD's Fishing Assistant</strong><br><br>
+                            Welcome back, Uncle PD! I can see today's weather, barometer, moon and solunar times, the DNR lake data, and your catch log, so ask me anything:
+                            <br>• "Where should I go Saturday morning?"
+                            <br>• "What's working for crappie in this cold front?"
+                            <br>• "Why did the bite die this afternoon?"
+                            <br><br>Tap the microphone to talk instead of type, and 🔊 to hear an answer.
                         </div>
                     </div>
                     
@@ -1467,10 +1480,11 @@
                             <div class="condition-desc" id="pressureDesc"></div>
                         </div>
 
-                        <div class="condition-card">
+                        <div class="condition-card" onclick="logWaterReading()" style="cursor: pointer;">
                             <div class="condition-title"><i class="fas fa-water"></i> Water Temp</div>
                             <div class="condition-value" id="waterTemp">–</div>
                             <div class="condition-desc" id="waterDesc"></div>
+                            <div class="condition-desc" style="margin-top: 0.4rem; font-weight: bold;">📝 Tap to enter a water temp you measured</div>
                         </div>
 
                         <div class="condition-card">
@@ -1570,6 +1584,17 @@
                         <div class="form-group">
                             <label class="form-label" for="catchWeight">Weight (lbs)</label>
                             <input type="number" id="catchWeight" class="form-input" inputmode="decimal" step="0.01" min="0" placeholder="e.g. 3.2">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="catchDepth">Depth (ft)</label>
+                            <input type="number" id="catchDepth" class="form-input" inputmode="decimal" step="0.5" min="0" placeholder="optional">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="catchWaterTemp">Water temp (°F)</label>
+                            <input type="number" id="catchWaterTemp" class="form-input" inputmode="decimal" step="0.5" min="30" max="95" placeholder="optional">
                         </div>
                     </div>
 
@@ -2836,14 +2861,15 @@
             const message = input.value.trim();
             
             if (message && !isAIResponding) {
-                addMessage(message, 'user');
+                addMessage(escapeHTML(message), 'user');
                 input.value = '';
                 generateAIResponse(message);
             }
         }
 
         function sendQuickMessage(message) {
-            addMessage(message, 'user');
+            if (isAIResponding) return;
+            addMessage(escapeHTML(message), 'user');
             generateAIResponse(message);
         }
 
@@ -2880,274 +2906,147 @@
             }
         }
 
+        // The assistant: Google Gemini (free tier) behind a small server function (api/chat.js) that keeps the key safe.
+        // On GitHub Pages the app calls the Vercel deployment; when the app itself runs on Vercel it calls its own /api/chat.
+        const AI_REMOTE_ENDPOINT = 'https://uncle-fishing.vercel.app/api/chat';
+        const AI_ENDPOINT = location.hostname.endsWith('github.io') ? AI_REMOTE_ENDPOINT : 'api/chat';
+        const chatHistory = [];
+
+        // Everything the app knows, written out for the assistant. Secret spot coordinates stay on the phone.
+        function buildAIContext() {
+            const lines = [`Now: ${new Date().toLocaleString([], { weekday: 'long', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' })}`];
+
+            if (conditionsState) {
+                const { data, analysis: a } = conditionsState;
+                const w = data.weather, c = w.current;
+                const place = data.name.replace(/^[📍⭐📌] /u, '');
+                lines.push(`\nCONDITIONS at ${place} (updated ${Math.round((Date.now() - data.fetchedAt) / 60000)} min ago):`,
+                    `${Math.round(c.temperature_2m)}°F, ${weatherInfo(c.weather_code)[0]}, wind ${Math.round(c.wind_speed_10m)} mph from ${compassPoint(c.wind_direction_10m)} gusting ${Math.round(c.wind_gusts_10m)}`,
+                    `Barometer ${a.pressureNow.toFixed(2)} inHg, change over 3 hrs ${a.pressureChange >= 0 ? '+' : ''}${a.pressureChange.toFixed(2)}`,
+                    latestWaterReading(data.coords) ? `Water temp ${latestWaterReading(data.coords).tempF}°F (his own reading)` :
+                        a.waterEstimate != null ? `Estimated surface water temp ~${Math.round(a.waterEstimate)}°F (estimate from air temps, not measured)` : '',
+                    `Moon: ${moonPhaseName(a.moon.phase)[0]}, ${Math.round(a.moon.fraction * 100)}% lit. Sunrise ${formatTime(a.sunrise)}, sunset ${formatTime(a.sunset)}`,
+                    `Bite score now ${a.score}/10 (${a.rating}): ${a.reasons.join(' ')}`,
+                    `Today's windows: ${a.periods.map(p => `${p.label} ${formatTime(p.start)}-${formatTime(p.end)}`).join('; ')}`);
+                (data.alerts || []).forEach(al => lines.push(`NWS ALERT: ${al.event}${al.headline ? ' - ' + al.headline : ''}`));
+                const todayIndex = w.daily.time.indexOf(c.time.slice(0, 10));
+                const days = w.daily.time.slice(todayIndex, todayIndex + 7);
+                lines.push('7-day outlook:');
+                days.forEach((day, j) => {
+                    const i = todayIndex + j;
+                    const o = dayOutlook(data, day);
+                    lines.push(`- ${new Date(day + 'T12:00').toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })}: ${weatherInfo(w.daily.weather_code[i])[0]}, ${Math.round(w.daily.temperature_2m_max[i])}/${Math.round(w.daily.temperature_2m_min[i])}°F, wind to ${Math.round(w.daily.wind_speed_10m_max[i])} mph ${compassPoint(w.daily.wind_direction_10m_dominant[i])}, rain ${w.daily.precipitation_probability_max[i] ?? 0}%, day score ${o.score}/10 (${o.reasons.join(', ')}); prime ${formatTime(o.prime.start)}-${formatTime(o.prime.end)}`);
+                });
+
+                const nearby = accessSites
+                    .map(s => ({ s, d: distanceMiles(data.coords.lat, data.coords.lng, s.lat, s.lng) }))
+                    .filter(x => x.d < 15).sort((x, y) => x.d - y.d).slice(0, 6);
+                if (nearby.length) {
+                    lines.push('\nNEARBY DNR ACCESS SITES:');
+                    nearby.forEach(({ s, d }) => lines.push(`- ${s.site_name || 'Site'} on ${s.waterbody || '?'} (${d.toFixed(1)} mi): ramp ${s.boat_ramp || '?'}, motors ${[s.motor, s.motor_rest].filter(Boolean).join(' ') || '?'}, species ${[s.species, s.species2].filter(Boolean).join(', ') || '?'}`));
+                }
+            }
+
+            if (catches.length) {
+                lines.push(`\nUNCLE PD'S CATCH LOG: ${catches.length} catches.`);
+                const counts = {};
+                catches.forEach(c => { counts[c.species] = (counts[c.species] || 0) + 1; });
+                lines.push('By species: ' + Object.entries(counts).sort((a, b) => b[1] - a[1]).map(([s, n]) => `${s} ${n}`).join(', '));
+                const withConditions = catches.filter(c => c.conditions);
+                if (withConditions.length >= 3) {
+                    const pattern = (label, key) => { const b = topBucket(withConditions, key); return b ? `${label}: ${b.value} (${b.pct}%)` : null; };
+                    lines.push('Patterns: ' + [
+                        pattern('pressure', c => c.conditions.pressureTrend),
+                        pattern('time', c => c.conditions.timeOfDay),
+                        pattern('wind', c => windBucket(c.conditions.windMph)),
+                        pattern('moon', c => c.conditions.moon),
+                        pattern('lure', c => c.lure),
+                        pattern('water', c => c.water)
+                    ].filter(Boolean).join('; '));
+                }
+                lines.push('Recent catches:');
+                catches.slice(0, 15).forEach(c => {
+                    const k = c.conditions || {};
+                    lines.push(`- ${new Date(c.time).toLocaleDateString()} ${k.timeOfDay || ''}: ${c.species}${catchSize(c) ? ' ' + catchSize(c) : ''}${c.water ? ' at ' + c.water : ''}${c.lure ? ', lure ' + c.lure : ''}${c.depthFt ? ', ' + c.depthFt + ' ft deep' : ''}${c.waterTempF ? ', water ' + c.waterTempF + '°F' : ''}${k.pressureTrend ? ', ' + k.pressureTrend.toLowerCase() + ' pressure' : ''}${k.windMph != null ? ', wind ' + k.windMph + ' ' + k.windDir : ''}${k.moon ? ', ' + k.moon : ''}${c.notes ? '. Notes: ' + c.notes : ''}`);
+                });
+            } else {
+                lines.push("\nCatch log: empty so far.");
+            }
+
+            if (customLakes.length) lines.push(`\nHis secret spots (names only): ${customLakes.map(l => l.name).join(', ')}`);
+            lines.push(`\nLakes in the app: ${Object.values(lakeData).map(l => `${l.name} (${l.fish.join('/')})`).join('; ')}`);
+            return lines.filter(l => l !== '').join('\n');
+        }
+
+        // Safe formatting for AI text: escape everything, then allow **bold** and line breaks
+        function formatAIText(text) {
+            return escapeHTML(text)
+                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                .replace(/^\s*[-*] /gm, '• ')
+                .replace(/\n/g, '<br>');
+        }
+
+        function addAIMessage(text) {
+            addMessage(formatAIText(text), 'ai');
+            if ('speechSynthesis' in window) {
+                const message = document.querySelector('#chatMessages .message.ai:last-child');
+                const speak = document.createElement('button');
+                speak.className = 'speak-btn';
+                speak.setAttribute('aria-label', 'Read this out loud');
+                speak.textContent = '🔊 Read aloud';
+                speak.onclick = () => {
+                    speechSynthesis.cancel();
+                    speechSynthesis.speak(new SpeechSynthesisUtterance(text.replace(/\*\*/g, '')));
+                };
+                message.appendChild(speak);
+            }
+        }
+
+        async function askAssistant() {
+            const response = await fetch(AI_ENDPOINT, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ messages: chatHistory.slice(-12), context: buildAIContext() })
+            });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok || !data.reply) {
+                const error = new Error(data.error || 'The assistant returned ' + response.status);
+                error.status = response.status;
+                throw error;
+            }
+            return data.reply;
+        }
+
+        // When the AI can't be reached, answer from what the phone already knows, and say so
+        function offlineAnswer(message, error) {
+            const lower = message.toLowerCase();
+            const why = error && error.status === 503 ? "The AI isn't switched on yet." :
+                error && error.status === 429 ? 'The free AI is at its limit for the moment. Try again in a minute.' :
+                navigator.onLine ? "I can't reach the AI right now." : "No signal, so I can't reach the AI.";
+            if (/regulation|rule|limit|license|legal|size/.test(lower)) {
+                return `${why} For limits, sizes and seasons, check the current <a href="https://www.in.gov/dnr/fish-and-wildlife/" target="_blank" rel="noopener">Indiana DNR fishing guide</a>; some lakes have special rules.`;
+            }
+            const summary = conditionsSummary();
+            return summary ? `${why} Here's what I know from the phone:<br><br>${summary}` : `${why} Check the Conditions tab for the latest reading.`;
+        }
+
         async function generateAIResponse(userMessage) {
             if (isAIResponding) return;
-            
             isAIResponding = true;
             addTypingIndicator();
-            
+            chatHistory.push({ role: 'user', text: userMessage });
             try {
-                // Try completely free APIs with NO signup required
-                const lower = userMessage.toLowerCase();
-                const liveAnswer = /weather|condition|wind|pressure|barometer|moon|solunar|when should|best time/.test(lower) ? conditionsSummary() : null;
-                let response = liveAnswer ||
-                              await tryFreeGPTAPI(userMessage) || 
-                              await tryAnonChatGPT(userMessage) ||
-                              getContextualResponse(userMessage.toLowerCase());
-                
+                const reply = await askAssistant();
+                chatHistory.push({ role: 'assistant', text: reply });
                 removeTypingIndicator();
-                addMessage(response, 'ai');
-                
+                addAIMessage(reply);
             } catch (error) {
-                console.log('AI API Error:', error);
+                console.log('Assistant unavailable:', error);
+                chatHistory.pop();
                 removeTypingIndicator();
-                
-                // Fallback to enhanced contextual response
-                let fallbackResponse = getContextualResponse(userMessage.toLowerCase());
-                addMessage(fallbackResponse, 'ai');
+                addMessage(offlineAnswer(userMessage, error), 'ai');
             }
-            
             isAIResponding = false;
-        }
-
-        // Free GPT API - NO signup, NO account needed!
-        async function tryFreeGPTAPI(userMessage) {
-            try {
-                const fishingPrompt = `You are Uncle PD's fishing assistant for Northwest Indiana. He's asking: "${userMessage}". Give helpful, specific advice about fishing in Northwest Indiana lakes like Cedar Lake, Wolf Lake, Lake Michigan, etc. Keep it under 150 words and be encouraging.`;
-                
-                const response = await fetch(`https://free-unoficial-gpt4o-mini-api-g70n.onrender.com/chat/?query=${encodeURIComponent(fishingPrompt)}`, {
-                    method: 'GET',
-                    headers: {
-                        'Accept': 'application/json'
-                    }
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data && data.response) {
-                        return data.response;
-                    }
-                }
-                return null;
-                
-            } catch (error) {
-                console.log('Free GPT API unavailable:', error);
-                return null;
-            }
-        }
-
-        // Backup anonymous AI API
-        async function tryAnonChatGPT(userMessage) {
-            try {
-                // Try a simple proxy that doesn't require auth
-                const response = await fetch('https://api.g4f.icu/chat/completions', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        model: 'gpt-3.5-turbo',
-                        messages: [
-                            {
-                                role: 'system',
-                                content: 'You are Uncle PD\'s fishing assistant for Northwest Indiana. Give helpful advice about local lakes, fish species, and techniques.'
-                            },
-                            {
-                                role: 'user',
-                                content: userMessage
-                            }
-                        ],
-                        stream: false
-                    })
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.choices && data.choices[0] && data.choices[0].message) {
-                        return data.choices[0].message.content;
-                    }
-                }
-                return null;
-                
-            } catch (error) {
-                console.log('Anonymous ChatGPT unavailable:', error);
-                return null;
-            }
-        }
-
-        // Enhanced contextual responses with more variety
-        function getContextualResponse(message) {
-            const responses = {
-                'spots': [
-                    `Based on current conditions, here are Uncle PD's top fishing spots in NW Indiana today:
-
-🎯 **Cedar Lake** - Excellent for bass around fallen timber on the north shore. Water temp is perfect at 68°F.
-🎯 **Lake Michigan** - Steelhead are running near Michigan City harbor. Try early morning with spawn bags.
-🎯 **Tippecanoe Lake** - Walleye active in 15-20ft depths on the east side. Slow trolling with crawlers.
-
-The morning bite has been particularly good with these partly cloudy skies!`,
-
-                    `Here's what's hot in Northwest Indiana right now:
-
-🔥 **Wolf Lake** - Pike are aggressive in the shallow north end. Try spinnerbaits.
-🔥 **Lake Wawasee** - Walleye are schooling on the main lake points. Jigs working well.
-🔥 **Bass Lake** - Topwater action is excellent at dawn and dusk.
-
-Current water temps in the upper 60s are triggering feeding activity!`
-                ],
-
-                'biting': [
-                    `Uncle PD, here's what's actively feeding this week:
-
-🐟 **Largemouth Bass** - Very active on spinnerbaits and Texas rigs near cover
-🐟 **Steelhead** - Excellent runs in Lake Michigan tributaries  
-🐟 **Walleye** - Best success trolling in 15-25 foot depths
-🐟 **Bluegill** - Spawning activity in shallow bays, try small jigs
-
-Water temps around 68°F are perfect for most species!`,
-
-                    `What's biting for Uncle PD today:
-
-🎣 **Northern Pike** - Aggressive in Wolf Lake and Cedar Lake weed lines
-🎣 **Crappie** - Schools are tight in deeper timber at Lake Freeman
-🎣 **Bass** - Pre-spawn staging on main lake points
-🎣 **Catfish** - Active in deeper holes, especially evening hours
-
-The stable barometric pressure has fish feeding regularly!`
-                ],
-
-                'regulations': [
-                    `Current Indiana fishing regulations for Uncle PD:
-
-📋 **License Required** - All anglers 18+ need valid Indiana fishing license ($17 annual)
-📋 **Bass** - No size limit, 5 daily limit (most lakes)
-📋 **Walleye** - 14" minimum, 5 daily limit
-📋 **Steelhead** - No size limit, 5 daily limit
-📋 **Northern Pike** - No size limit, 5 daily limit
-📋 **Bluegill** - No size limit, 25 daily limit
-
-Always check lake-specific regulations as some waters have special rules!`,
-
-                    `Uncle PD's regulation quick reference:
-
-🎯 **Lake Michigan** - Great Lakes license or trout/salmon stamp required
-🎯 **Private Lakes** - Some require additional permits (check Cedar Lake rules)
-🎯 **Muskie** - 36" minimum where present, 1 daily limit
-🎯 **Striped Bass** - 14" minimum at Lake Shafer/Freeman
-🎯 **Season Dates** - Most species year-round, check muskie seasons
-
-Pro tip: Download the Indiana Fish & Wildlife app for latest updates!`
-                ],
-
-                'bait': [
-                    `Best bait for Uncle PD's current conditions (68°F water, light wind):
-
-🎣 **Topwater** - Buzzbaits and poppers for early morning bass action
-🎣 **Spinnerbaits** - White/chartreuse for stained water conditions
-🎣 **Jigs** - 1/4oz with crawfish trailers for bass in cover
-🎣 **Live Bait** - Nightcrawlers for walleye, minnows for crappie
-🎣 **Spoons** - Silver kastmasters for Lake Michigan salmon/steelhead
-
-The overcast conditions are perfect for reaction baits!`,
-
-                    `Uncle PD's tackle recommendations for today:
-
-💪 **Structure Fishing** - Texas rigged creature baits in 8-12 feet
-💪 **Open Water** - Crankbaits in natural colors for clear water
-💪 **Weed Lines** - Spinnerbaits and chatterbaits
-💪 **Deep Water** - Drop shot with finesse worms
-💪 **Current Areas** - Jigs bounced along bottom
-
-Focus on transition zones where deep meets shallow!`
-                ],
-
-                'weather': [
-                    `I couldn't load live weather just now, so I won't guess. Check your signal and open the Conditions tab (the cloud button up top) to retry.`
-                ],
-
-                'techniques': [
-                    `Top techniques for Uncle PD in NW Indiana right now:
-
-🎯 **Bass Fishing**: Texas rig with creature baits around fallen timber
-🎯 **Walleye**: Slow trolling with crawler harnesses at 2.5 mph
-🎯 **Steelhead**: Drift fishing with spawn bags in current
-🎯 **Pike**: Spinnerbaits along weed edges and drop-offs
-🎯 **Panfish**: Small jigs under slip bobbers near spawning beds
-
-Focus on structure transitions and current breaks for best results!`,
-
-                    `Uncle PD's proven techniques for these conditions:
-
-⚡ **Reaction Baits** - Fast-moving lures in this wind
-⚡ **Finesse Fishing** - Slower presentations in clear water
-⚡ **Vertical Jigging** - For suspended fish in deeper lakes
-⚡ **Trolling Patterns** - Follow contour lines and points
-⚡ **Live Bait Rigs** - When fish are finicky or pressured
-
-Vary your retrieve speed until you find what triggers strikes!`
-                ]
-            };
-
-            // Determine response category and pick random response
-            let category = 'general';
-            if (message.includes('spot') || message.includes('where') || message.includes('location')) {
-                category = 'spots';
-            } else if (message.includes('biting') || message.includes('active') || message.includes('fish')) {
-                category = 'biting';
-            } else if (message.includes('regulation') || message.includes('rule') || message.includes('limit') || message.includes('legal')) {
-                category = 'regulations';
-            } else if (message.includes('bait') || message.includes('lure') || message.includes('what to use')) {
-                category = 'bait';
-            } else if (message.includes('weather') || message.includes('condition')) {
-                category = 'weather';
-            } else if (message.includes('technique') || message.includes('how') || message.includes('method')) {
-                category = 'techniques';
-            }
-
-            if (responses[category] && Array.isArray(responses[category])) {
-                const randomIndex = Math.floor(Math.random() * responses[category].length);
-                return responses[category][randomIndex];
-            }
-
-            // General responses with more variety
-            const generalResponses = [
-                `Hey Uncle PD! Great question about Northwest Indiana fishing. 
-
-For the current conditions (68°F water, partly cloudy), I'd recommend focusing on structure fishing around Cedar Lake and Wolf Lake. The bass are active on spinnerbaits and the walleye are hitting in deeper water.
-
-What specific aspect would you like to know more about:
-• Best fishing spots for today's conditions
-• What fish are actively biting right now  
-• Current regulations and limits
-• Recommended baits and techniques for these conditions`,
-
-                `Uncle PD, with these perfect fishing conditions in NW Indiana, you've got lots of great options!
-
-The water temperature around 68°F has fish in an active feeding mood. Lake Michigan steelhead are running, Cedar Lake bass are hitting topwater, and the walleye are schooling in the deeper lakes.
-
-I can give you specific details about:
-• Hot spots that are producing today
-• What species are most active
-• Best baits for current weather
-• Local regulations you should know
-
-What would be most helpful for your next fishing trip?`,
-
-                `Perfect timing for fishing in Northwest Indiana, Uncle PD!
-
-Current conditions are excellent with stable weather and ideal water temps. The fish are cooperating across multiple species - from bass in the shallow lakes to walleye in the deeper waters.
-
-I'm here to help with whatever you need:
-• Detailed spot recommendations
-• Species activity reports  
-• Technique suggestions
-• Regulation updates
-
-Just ask me anything specific about your fishing plans!`
-            ];
-
-            const randomGeneral = Math.floor(Math.random() * generalResponses.length);
-            return generalResponses[randomGeneral];
         }
 
         function startVoiceInput() {
@@ -3489,7 +3388,12 @@ Just ask me anything specific about your fishing plans!`
             document.getElementById('pressure').textContent = `${a.pressureNow.toFixed(2)} inHg`;
             document.getElementById('pressureDesc').textContent = trend.charAt(0).toUpperCase() + trend.slice(1);
 
-            if (data.locationId === 'lake-michigan') {
+            const reading = latestWaterReading(data.coords);
+            if (reading) {
+                const hrs = Math.round((Date.now() - reading.time) / 3600000);
+                document.getElementById('waterTemp').textContent = `${reading.tempF}°F`;
+                document.getElementById('waterDesc').textContent = `Your reading ${hrs < 1 ? 'just now' : hrs + ' hr' + (hrs === 1 ? '' : 's') + ' ago'}${reading.depthFt ? ' · ' + reading.depthFt + ' ft deep' : ''}`;
+            } else if (data.locationId === 'lake-michigan') {
                 document.getElementById('waterTemp').textContent = 'See GLERL';
                 document.getElementById('waterDesc').innerHTML = 'Lake Michigan is too big to estimate. <a href="https://coastwatch.glerl.noaa.gov/" target="_blank" rel="noopener" style="color: white;">Live NOAA surface temps</a>';
             } else if (a.waterEstimate != null) {
@@ -3879,6 +3783,8 @@ Just ask me anything specific about your fishing plans!`
                     species,
                     length: parseFloat(document.getElementById('catchLength').value) || null,
                     weight: parseFloat(document.getElementById('catchWeight').value) || null,
+                    depthFt: parseFloat(document.getElementById('catchDepth').value) || null,
+                    waterTempF: parseFloat(document.getElementById('catchWaterTemp').value) || null,
                     lure: document.getElementById('catchLure').value.trim(),
                     released: document.getElementById('catchReleased').checked,
                     notes: document.getElementById('catchNotes').value.trim(),
@@ -3890,6 +3796,10 @@ Just ask me anything specific about your fishing plans!`
                 const previousBest = catches.filter(c => c.species === species).reduce((best, c) => Math.max(best, catchRank(c)), 0);
                 await catchStore('readwrite', store => store.put(record));
                 catches.unshift(record);
+                if (record.waterTempF && coords) {
+                    saveWaterReading({ time: time.getTime(), coords, tempF: record.waterTempF, depthFt: record.depthFt });
+                    if (conditionsState) renderConditions(conditionsState.data);
+                }
                 closeCatchForm();
                 renderCatches();
                 switchSection('catches');
@@ -3971,6 +3881,40 @@ Just ask me anything specific about your fishing plans!`
             return mph < 4 ? 'Calm (under 4 mph)' : mph <= 10 ? 'Light (4–10 mph)' : mph <= 15 ? 'Breezy (11–15 mph)' : 'Windy (over 15 mph)';
         }
 
+        function depthBucket(ft) {
+            if (!ft) return null;
+            return ft <= 5 ? '0–5 ft' : ft <= 10 ? '6–10 ft' : ft <= 15 ? '11–15 ft' : ft <= 20 ? '16–20 ft' : ft <= 30 ? '21–30 ft' : 'Over 30 ft';
+        }
+
+        // Water temperature readings he enters by hand beat the air-temperature estimate
+        function waterReadings() {
+            try { return JSON.parse(localStorage.getItem('unclePDWaterReadings')) || []; } catch (e) { return []; }
+        }
+
+        function saveWaterReading(reading) {
+            const readings = waterReadings().filter(r => Date.now() - r.time < 30 * 86400000);
+            readings.push(reading);
+            localStorage.setItem('unclePDWaterReadings', JSON.stringify(readings));
+        }
+
+        function latestWaterReading(coords) {
+            return waterReadings()
+                .filter(r => Date.now() - r.time < 24 * 3600000 && distanceMiles(coords.lat, coords.lng, r.coords.lat, r.coords.lng) < 3)
+                .sort((a, b) => b.time - a.time)[0] || null;
+        }
+
+        async function logWaterReading() {
+            const value = prompt('Water temperature you measured (°F):');
+            const tempF = parseFloat(value);
+            if (!tempF || tempF < 30 || tempF > 95) return;
+            let coords = null;
+            try { coords = await getMyLocation(); } catch (e) {}
+            if (!coords && conditionsState) coords = conditionsState.data.coords;
+            if (!coords) return;
+            saveWaterReading({ time: Date.now(), coords, tempF });
+            if (conditionsState) renderConditions(conditionsState.data);
+        }
+
         function skyBucket(sky) {
             if (!sky) return null;
             if (/clear/i.test(sky)) return 'Clear skies';
@@ -3992,6 +3936,8 @@ Just ask me anything specific about your fishing plans!`
                 ['☁️ Sky', topBucket(withConditions, c => skyBucket(c.conditions.sky))],
                 ['🌙 Moon', topBucket(withConditions, c => c.conditions.moon)],
                 ['🕰️ Solunar', topBucket(withConditions, c => c.conditions.solunar ? 'During a solunar period' : 'Outside solunar periods')],
+                ['🌊 Depth', topBucket(catches, c => depthBucket(c.depthFt))],
+                ['💧 Water temp', topBucket(catches, c => c.waterTempF ? `${Math.floor(c.waterTempF / 5) * 5}–${Math.floor(c.waterTempF / 5) * 5 + 4}°F` : null)],
                 ['🎣 Lure', topBucket(catches, c => c.lure)],
                 ['📍 Water', topBucket(catches, c => c.water)]
             ].filter(r => r[1]);
@@ -4039,6 +3985,8 @@ Just ask me anything specific about your fishing plans!`
                 k.moon ? `${k.moonIcon} ${k.moon}` : null,
                 k.solunar ? `🕰️ ${k.solunar.replace(/^(Major|Minor): /, '')}` : null,
                 k.timeOfDay ? `🕐 ${k.timeOfDay}` : null,
+                c.depthFt ? `🌊 ${c.depthFt} ft deep` : null,
+                c.waterTempF ? `💧 ${c.waterTempF}° water` : null,
                 c.lure ? `🎣 ${c.lure}` : null
             ].filter(Boolean).map(t => `<span class="cond-chip">${escapeHTML(t)}</span>`).join('');
         }
