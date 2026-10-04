@@ -235,7 +235,7 @@
             position: relative;
         }
 
-        #map {
+        #mapCanvas {
             width: 100%;
             height: 100%;
         }
@@ -898,7 +898,7 @@
             <!-- Map Section -->
             <section class="section active" id="map">
                 <div class="map-container">
-                    <div id="map" class="map-loading">
+                    <div id="mapCanvas" class="map-loading">
                         <h2 style="margin-bottom: 1rem;">Loading Indiana Lakes...</h2>
                         <p style="margin-bottom: 2rem; opacity: 0.9;">Interactive map loading...</p>
                         <div style="width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.3); border-top: 4px solid white; border-radius: 50%; animation: spin 1s linear infinite;"></div>
@@ -1786,11 +1786,11 @@
             try { savedView = JSON.parse(localStorage.getItem('unclePDMapView')); } catch (e) {}
             
             // Clear the loading placeholder so it can't show through gaps in the tiles
-            const mapEl = document.getElementById('map');
+            const mapEl = document.getElementById('mapCanvas');
             mapEl.innerHTML = '';
             mapEl.classList.remove('map-loading');
 
-            map = L.map('map', {
+            map = L.map('mapCanvas', {
                 center: savedView ? savedView.center : [39.8, -86.2],
                 zoom: savedView ? savedView.zoom : 7,
                 zoomControl: false
@@ -2777,7 +2777,7 @@ ${a.reasons.map(escapeHTML).join('<br>')}`;
                 loadGoogleMaps();
             } catch (error) {
                 console.log('Map unavailable:', error);
-                const mapEl = document.getElementById('map');
+                const mapEl = document.getElementById('mapCanvas');
                 mapEl.classList.add('map-loading');
                 mapEl.innerHTML = '<h2>Map needs a signal the first time</h2><p style="opacity: 0.9;">Conditions and your spots still work.</p>';
             }
