@@ -38,10 +38,14 @@ Voice input - speak your questions!
 
 3. Live Conditions 🌤️
 
-Real-time weather and water conditions
-7-day forecast for planning trips
-Fishing condition ratings (Excellent/Good/Fair)
-Updates automatically every 30 seconds
+Pick any lake, secret spot, or "My current location"
+Live weather, wind (and which shore it's pushing bait to), and barometric pressure trend
+Moon phase plus solunar major/minor feeding times, sunrise and sunset
+A 1–10 bite score that tells you WHY (pressure, wind, moon, time of day)
+Real 7-day forecast with wind and rain chances
+Estimated water temp for inland lakes (NOAA link for Lake Michigan)
+Refreshes every 15 minutes; shows the last reading if you lose signal
+Tap "Conditions" in any map pin to jump straight there
 
 4. Your Secret Spots ⭐
 
@@ -106,6 +110,7 @@ Consider installing it to your home screen
 File Structure:
 📁 Your Website Folder
 ├── 📄 index.html (the main app file)
+├── 📄 suncalc.js (sun and moon math for solunar times)
 └── 🖼️ unclepd.jpg (your cartoon avatar)
 
 🎣 What Each Section Does
@@ -125,9 +130,9 @@ Voice input capability
 
 🌤️ Conditions Tab
 
-Current weather and water temperature
-Wind speed and direction
-Fishing condition ratings
+Bite score with the reasons behind it
+Live weather, wind, barometer, moon, and sun
+Best times today (solunar periods, dawn and dusk)
 7-day forecast
 
 ⭐ My Lakes Tab
